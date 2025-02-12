@@ -4,6 +4,7 @@ import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import WelcomePage from "./pages/WelcomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import Footer from "./components/Footer";
 
 function App() {
   const [theme, setTheme] = useState("dark");
@@ -35,6 +36,7 @@ function App() {
           <Route path="/login" element={<LoginPage theme={theme} />} />
           <Route path="/register" element={<RegisterPage theme={theme} />} />
         </Routes>
+        <Footer theme={theme} />
       </div>
     </Router>
   );

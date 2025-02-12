@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { FaMapMarkedAlt, FaCompass, FaUser } from "react-icons/fa";
+import DestinationCard from "../components/DestinationCard";
+import DestGroupCard from "../components/DestGroupCard";
+import InteractiveMap from "../components/Map";
 
 function WelcomePage({ theme, toggleTheme }) {
     return (
@@ -44,7 +47,17 @@ function WelcomePage({ theme, toggleTheme }) {
                     </div>
                 </div>
 
-                {/* <div className="mt-16 text-center">
+                {/* Top Destinations */}
+                {/* In this section we display the top destination, ordered by the number of ratings */}
+                {/* Destination cards */}
+                <div className="mt-16 ">
+                    <DestGroupCard theme={theme}/>
+                </div>
+            
+
+                {/* WHY CHOOSE WANDERLUST */}
+
+                <div className="mt-16 text-center">
                     <h2
                         className={`${theme === "dark" ? "text-green-500" : "text-green-500"
                             } text-48px font-poppins font-semibold mb-4`}
@@ -95,7 +108,13 @@ function WelcomePage({ theme, toggleTheme }) {
                             </p>
                         </div>
                     </div>
-                </div> */}
+                </div>
+
+                {/* Interactive Map */}
+
+                <div className="w-full px-32 my-6">
+                    <InteractiveMap />
+                </div>
 
             </div>
         </>
