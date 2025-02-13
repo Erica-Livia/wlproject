@@ -31,10 +31,10 @@ function Navbar({theme, toggleTheme}) {
                     <div className=" flex items-center">
                         <ul className="list-none flex space-x-8 mt-0 sm:mt-0 justify-center">
                             <li>
-                                <a href="https://github.com/Erica-Livia/">Destinations</a>
+                                <a href="/destinations">Destinations</a>
                             </li>
                             <li>
-                                <a href="https://www.linkedin.com/in/erica-livia/">Guides</a>
+                                <a href="/guides">Guides</a>
                             </li>
 
                             {/* Conditional Links for Logged-In User */}
@@ -42,13 +42,13 @@ function Navbar({theme, toggleTheme}) {
                                 <>
                                     <li><a href="/tours">My Tours</a></li>
                                     <li>
-                                        <a href="/user-settings" className="flex items-center justify-center">
+                                        <a href="/settings" className="flex items-center justify-center">
                                             <FaUserCircle size={24} />
                                         </a>
                                     </li>
                                 </>
                             ) : (
-                                <li><a href="https://x.com/BurundianLivia">Login</a></li>
+                                <li><a href="/login">Login</a></li>
                             )}
                         </ul>
 
