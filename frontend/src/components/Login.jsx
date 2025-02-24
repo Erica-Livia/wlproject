@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -17,30 +19,59 @@ function Login() {
     setError('');
 
     try {
-      const response = await axios.post('https://your-backend.com/api/login', {
+      // Step 1: Firebase Authentication
+      console.log('Attempting Firebase authentication...');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Firebase authentication successful');
+
+      // Step 2: Get Firebase ID token
+      const idToken = await userCredential.user.getIdToken();
+      console.log('Got Firebase ID token');
+
+      // Step 3: Backend Authentication
+      console.log('Sending request to backend...');
+      const response = await axios.post('http://localhost:5000/api/login', {
         email,
-        password,
+        password
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        }
       });
+      console.log('Backend response:', response.data);
 
-      const { token, role } = response.data;
+      // Step 4: Handle successful login
+      const { role, uid } = response.data;
 
-      // Store token in localStorage
-      localStorage.setItem('authToken', token);
+      // Store authentication data
+      localStorage.setItem('authToken', idToken);
       localStorage.setItem('userRole', role);
+      localStorage.setItem('userId', uid);
+      localStorage.setItem('userEmail', email);
 
-      // Redirect based on user role
-      if (role === 'admin') {
-        navigate('/admin-dashboard');
-      } else if (role === 'guide') {
-        navigate('/guide-dashboard');
-      } else {
-        navigate('/');
+      console.log('Role:', role);
+
+      // Navigate based on role
+      switch(role) {
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        case 'guide':
+          navigate('/guide-dashboard');
+          break;
+        default:
+          navigate('/');
       }
+
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data.message || 'Login failed. Please try again.');
+      console.error('Login error:', err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else if (err.response) {
+        setError(err.response.data.error || 'Login failed');
       } else {
-        setError('Unable to connect to the server. Please try again.');
+        setError('Unable to connect to the server');
       }
     } finally {
       setIsLoading(false);
@@ -71,7 +102,7 @@ function Login() {
           </div>
         )}
 
-        {/* Email Login Form */}
+        {/* Login Form */}
         <form className="mt-8 space-y-6" onSubmit={handleEmailLogin}>
           <div className="rounded-md shadow-sm space-y-4">
             <div className="relative">
@@ -95,26 +126,6 @@ function Login() {
                 className="appearance-none rounded-lg relative block w-full pl-12 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Password"
               />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-khaki focus:ring-khaki border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-khaki hover:text-blue-500">
-                Forgot your password?
-              </Link>
             </div>
           </div>
 

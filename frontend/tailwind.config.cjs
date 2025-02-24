@@ -13,6 +13,8 @@ module.exports = {
         grey: '#D9D9D9',
         white: '#E7E7E7',
         textWhite: "#FFFFFF",
+        adminbg: "#667085",
+        guidebg: "#268750",
         // Dark mode colors
         dark: {
           green: '#1A1F1C',

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, User } from 'lucide-react';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import axios from 'axios';
 
 function SignUp() {
   const [formData, setFormData] = useState({
-    name: '',
+    lastName: '',
+    firstName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -16,10 +18,10 @@ function SignUp() {
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target;  // Correct destructuring (use 'name' instead of 'firstName' and 'lastName')
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value  // Dynamically update the correct field based on 'name'
     }));
   };
 
@@ -38,39 +40,40 @@ function SignUp() {
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
     setError('');
 
     try {
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      console.log('Starting signup process...', formData);
+
+      // First, create user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      console.log('Firebase auth success:', userCredential);
+
+      // Update profile with full name
+      await updateProfile(userCredential.user, {
+        displayName: `${formData.firstName} ${formData.lastName}`  // Correctly use firstName and lastName
+      });
+      console.log('Profile updated');
+
+      // Register with backend
+      const response = await axios.post('http://localhost:5000/api/signup', {
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        password: formData.password
+      });
+      console.log('Backend response:', response.data);
+
       navigate('/login');
     } catch (err) {
-      switch (err.code) {
-        case 'auth/email-already-in-use':
-          setError('An account with this email already exists');
-          break;
-        case 'auth/invalid-email':
-          setError('Invalid email address');
-          break;
-        default:
-          setError('Failed to create account. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      navigate('/');
-    } catch (err) {
-      setError('Failed to sign up with Google. Please try again.');
+      console.error('Signup error:', err);
+      setError(err.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
     }
@@ -105,16 +108,31 @@ function SignUp() {
         {/* Sign Up Form */}
         <form className="mt-8 space-y-6" onSubmit={handleEmailSignUp}>
           <div className="rounded-md shadow-sm space-y-4">
+            {/* First Name */}
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                name="name"
+                name="firstName"
                 required
-                value={formData.name}
+                value={formData.firstName}
                 onChange={handleInputChange}
                 className="appearance-none rounded-lg relative block w-full pl-12 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Full name"
+                placeholder="First name"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                name="lastName"
+                required
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className="appearance-none rounded-lg relative block w-full pl-12 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Last name"
               />
             </div>
             <div className="relative">
@@ -181,7 +199,7 @@ function SignUp() {
         {/* Google Sign Up */}
         <div>
           <button
-            onClick={handleGoogleSignUp}
+            // onClick={handleGoogleSignUp}
             disabled={isLoading}
             className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >

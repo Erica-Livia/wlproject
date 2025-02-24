@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaSearch, FaUserCircle } from "react-icons/fa";
 
-function Navbar({theme, toggleTheme}) {
+function NavBar({theme, toggleTheme, role}) {
     const [isLoggedIn, setIsLoggedIn] = useState(true);
     
     return (
@@ -38,7 +38,7 @@ function Navbar({theme, toggleTheme}) {
                             </li>
 
                             {/* Conditional Links for Logged-In User */}
-                            {isLoggedIn ? (
+                            {/* {isLoggedIn ? (
                                 <>
                                     <li><a href="/tours">My Tours</a></li>
                                     <li>
@@ -49,7 +49,8 @@ function Navbar({theme, toggleTheme}) {
                                 </>
                             ) : (
                                 <li><a href="/login">Login</a></li>
-                            )}
+                            )} */}
+                            <li><a href="/login">Login</a></li>
                         </ul>
 
                         {/* Animated Theme Toggle Button */}
@@ -70,4 +71,4 @@ function Navbar({theme, toggleTheme}) {
     );
 }
 
-export default Navbar;
+export default NavBar;

@@ -4,10 +4,12 @@ import { FaMapMarkedAlt, FaCompass, FaUser } from "react-icons/fa";
 import DestinationCard from "../components/DestinationCard";
 import DestGroupCard from "../components/DestGroupCard";
 import InteractiveMap from "../components/Map";
+import NavBar from "../components/NavBar";
 
 function WelcomePage({ theme, toggleTheme }) {
     return (
         <>
+            <NavBar theme={theme} toggleTheme={toggleTheme} />
             <div className={`min-h-screen flex flex-col items-center justify-center px-4 py-12 ${theme === "dark" ? "bg-white text-black" : "bg-green text-white"
                 }`}>
                 <div className="text-center space-y-6">

@@ -4,6 +4,7 @@ import { updateEmail, updatePassword, deleteUser } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
+import NavBar from '../components/NavBar';
 
 function UserSettings() {
   const [email, setEmail] = useState('');
@@ -84,6 +85,9 @@ function UserSettings() {
   };
 
   return (
+    <>
+     <NavBar theme={theme} toggleTheme={toggleTheme} />
+    
     <div className="user-settings-page container mx-auto p-8">
       <h2 className="text-2xl font-semibold mb-6">User Settings</h2>
 
@@ -156,6 +160,7 @@ function UserSettings() {
         </button>
       </div>
     </div>
+    </>
   );
 }
 
