@@ -7,6 +7,7 @@ import { PiUserBold } from "react-icons/pi";
 import { FiChevronDown, FiChevronUp, FiLogOut } from "react-icons/fi";
 import { MdSettings } from "react-icons/md";
 import { signOut } from 'firebase/auth';
+import { Link } from "react-router-dom";
 
 function GuideNav() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -63,19 +64,19 @@ function GuideNav() {
                 <div className="text-18px">
                     <ul className="space-y-8">
                         <li>
-                            <a href="/guide-dashboard" className="flex items-center">
+                            <Link to="/guide-dashboard" className="flex items-center">
                                 <RxDashboard className="text-24px mr-2" /> Dashboard
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="/users-list" className="flex items-center">
+                            <Link to="/users-list" className="flex items-center">
                                 <BsCalendar4Week className="text-24px mr-2" /> Bookings
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="/guide-reviews" className="flex items-center">
+                            <Link to="/guide-reviews" className="flex items-center">
                                 <FaStarHalfStroke className="text-24px mr-2" /> Reviews
-                            </a>
+                            </Link>
                         </li>
                         <li ref={dropdownRef} className="relative">
                             <button
@@ -93,12 +94,12 @@ function GuideNav() {
                             {/* Dropdown Menu */}
                             {isDropdownOpen && (
                                 <div className="absolute left-8 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10 text-16px">
-                                    <a
-                                        href="/guide-profile-setting"
+                                    <Link
+                                        to="/guide-profile-setting"
                                         className="block px-4 py-2 text-gray-800 hover:bg-gray-100 flex items-center"
                                     >
                                         <MdSettings className="mr-2" /> Profile Settings
-                                    </a>
+                                    </Link>
                                     <button
                                         onClick={() => {
                                             setShowLogoutModal(true);
@@ -124,8 +125,8 @@ function GuideNav() {
                             <button
                                 onClick={() => setShowLogoutModal(false)}
                                 className={`px-4 py-2 rounded ${theme === "dark"
-                                        ? "bg-gray-200 hover:bg-gray-300 text-green"
-                                        : "bg-white hover:bg-gray-100 text-green"
+                                    ? "bg-gray-200 hover:bg-gray-300 text-green"
+                                    : "bg-white hover:bg-gray-100 text-green"
                                     }`}
                             >
                                 Cancel
@@ -133,8 +134,8 @@ function GuideNav() {
                             <button
                                 onClick={handleLogout}
                                 className={`px-4 py-2 rounded ${theme === "dark"
-                                        ? "bg-red-600 hover:bg-red-700 text-white"
-                                        : "bg-red-600 hover:bg-red-700 text-white"
+                                    ? "bg-red-600 hover:bg-red-700 text-white"
+                                    : "bg-red-600 hover:bg-red-700 text-white"
                                     }`}
                             >
                                 Logout

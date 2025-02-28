@@ -2,14 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaSearch, FaUserCircle, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
+import { Link, useNavigate } from 'react-router-dom'; // Import Link and useNavigate
 
 function NavBar({ theme, toggleTheme, role }) {
-    // Check localStorage on component mount
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
         return localStorage.getItem('isLoggedIn') === 'true';
     });
-    
-    // State for dropdown, modal, and mobile menu
     const [showDropdown, setShowDropdown] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,33 +15,25 @@ function NavBar({ theme, toggleTheme, role }) {
     
     const dropdownRef = useRef(null);
     const mobileMenuRef = useRef(null);
-    
-    // Update localStorage whenever isLoggedIn changes
+    const navigate = useNavigate(); // Initialize useNavigate
+
     useEffect(() => {
         localStorage.setItem('isLoggedIn', isLoggedIn);
     }, [isLoggedIn]);
-    
-    // Handle logout
+
     const handleLogout = async () => {
         try {
-            // Sign out from Firebase
             await signOut(auth);
-    
-            // Clear local state
             setIsLoggedIn(false);
             setShowLogoutModal(false);
             setMobileMenuOpen(false);
-    
-            // Clear localStorage if needed
-            localStorage.removeItem('user'); // Example: Remove user data from localStorage
-    
-            // Redirect to the home page
-            window.location.href = "/"; // Force a full page reload to reset the app state
+            localStorage.removeItem('user');
+            navigate("/"); // Use navigate to redirect
         } catch (error) {
             console.error('Logout error:', error);
         }
     };
-    // Close dropdown when clicking outside
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -62,8 +52,7 @@ function NavBar({ theme, toggleTheme, role }) {
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
-    
-    // Close mobile menu when window resizes to desktop size
+
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth >= 768) {
@@ -79,7 +68,6 @@ function NavBar({ theme, toggleTheme, role }) {
         };
     }, []);
 
-    // Toggle body scroll when mobile menu is open
     useEffect(() => {
         if (mobileMenuOpen) {
             document.body.style.overflow = 'hidden';
@@ -100,7 +88,7 @@ function NavBar({ theme, toggleTheme, role }) {
                 <div className="flex justify-between items-center">
                     {/* Logo/Title */}
                     <div className="text-24px font-bold">
-                        <a href="/">WanderLust</a>
+                        <Link to="/">WanderLust</Link> {/* Replaced <a> with <Link> */}
                     </div>
 
                     {/* Search Bar (Desktop) */}
@@ -121,20 +109,20 @@ function NavBar({ theme, toggleTheme, role }) {
                     <div className="hidden md:flex items-center space-x-6">
                         <ul className="list-none flex space-x-6 items-center">
                             <li className="hover:opacity-75 transition-opacity">
-                                <a href="/destinations">Destinations</a>
+                                <Link to="/destinations">Destinations</Link> {/* Replaced <a> with <Link> */}
                             </li>
                             <li className="hover:opacity-75 transition-opacity">
-                                <a href="/guides">Guides</a>
+                                <Link to="/guides">Guides</Link> {/* Replaced <a> with <Link> */}
                             </li>
 
                             {/* Conditional Links for Logged-In User */}
                             {isLoggedIn ? (
                                 <>
                                     <li className="hover:opacity-75 transition-opacity">
-                                        <a href="/tours">My Tours</a>
+                                        <Link to="/tours">My Tours</Link> {/* Replaced <a> with <Link> */}
                                     </li>
                                     <li className="hover:opacity-75 transition-opacity">
-                                        <a href="/quizz">Quizzes</a>
+                                        <Link to="/quizz">Quizzes</Link> {/* Replaced <a> with <Link> */}
                                     </li>
                                     <li className="relative" ref={dropdownRef}>
                                         <div 
@@ -154,12 +142,12 @@ function NavBar({ theme, toggleTheme, role }) {
                                                     theme === "dark" ? "bg-white text-green" : "bg-green text-textWhite"
                                                 }`}
                                             >
-                                                <a href="/profile" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
+                                                <Link to="/profile" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
                                                     Profile
-                                                </a>
-                                                <a href="/settings" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
+                                                </Link> {/* Replaced <a> with <Link> */}
+                                                <Link to="/settings" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
                                                     Settings
-                                                </a>
+                                                </Link> {/* Replaced <a> with <Link> */}
                                                 <button 
                                                     onClick={() => {
                                                         setShowLogoutModal(true);
@@ -175,9 +163,9 @@ function NavBar({ theme, toggleTheme, role }) {
                                 </>
                             ) : (
                                 <li className="hover:opacity-75 transition-opacity">
-                                    <a href="/login" className={`px-4 py-2 rounded-full ${
+                                    <Link to="/login" className={`px-4 py-2 rounded-full ${
                                         theme === "dark" ? "bg-green text-white" : "bg-white text-green" 
-                                    }`}>Login</a>
+                                    }`}>Login</Link> {/* Replaced <a> with <Link> */}
                                 </li>
                             )}
                         </ul>
@@ -254,26 +242,26 @@ function NavBar({ theme, toggleTheme, role }) {
                     <div className="container mx-auto px-6 py-8 space-y-6">
                         <ul className="list-none space-y-6 text-lg">
                             <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                <a href="/destinations" onClick={() => setMobileMenuOpen(false)}>Destinations</a>
+                                <Link to="/destinations" onClick={() => setMobileMenuOpen(false)}>Destinations</Link> {/* Replaced <a> with <Link> */}
                             </li>
                             <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                <a href="/guides" onClick={() => setMobileMenuOpen(false)}>Guides</a>
+                                <Link to="/guides" onClick={() => setMobileMenuOpen(false)}>Guides</Link> {/* Replaced <a> with <Link> */}
                             </li>
 
                             {/* Conditional Links for Logged-In User */}
                             {isLoggedIn ? (
                                 <>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <a href="/tours" onClick={() => setMobileMenuOpen(false)}>My Tours</a>
+                                        <Link to="/tours" onClick={() => setMobileMenuOpen(false)}>My Tours</Link> {/* Replaced <a> with <Link> */}
                                     </li>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <a href="/quizz" onClick={() => setMobileMenuOpen(false)}>Quizzes</a>
+                                        <Link to="/quizz" onClick={() => setMobileMenuOpen(false)}>Quizzes</Link> {/* Replaced <a> with <Link> */}
                                     </li>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <a href="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</a>
+                                        <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link> {/* Replaced <a> with <Link> */}
                                     </li>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <a href="/settings" onClick={() => setMobileMenuOpen(false)}>Settings</a>
+                                        <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>Settings</Link> {/* Replaced <a> with <Link> */}
                                     </li>
                                     <li className="hover:opacity-75 transition-opacity">
                                         <button 
@@ -289,38 +277,18 @@ function NavBar({ theme, toggleTheme, role }) {
                                 </>
                             ) : (
                                 <li className="hover:opacity-75 transition-opacity">
-                                    <a 
-                                        href="/login" 
+                                    <Link 
+                                        to="/login" 
                                         onClick={() => setMobileMenuOpen(false)}
                                         className={`inline-block px-6 py-3 rounded-full ${
                                             theme === "dark" ? "bg-green text-white" : "bg-white text-green" 
                                         }`}
                                     >
                                         Login
-                                    </a>
+                                    </Link> {/* Replaced <a> with <Link> */}
                                 </li>
                             )}
                         </ul>
-                        
-                        {/* <div className="pt-6 flex items-center justify-between">
-                            <span>Change Theme:</span>
-                            <div
-                                onClick={() => {
-                                    toggleTheme();
-                                }}
-                                className={`relative w-16 h-8 flex items-center rounded-full cursor-pointer transition-all duration-300 ease-in-out ${
-                                    theme === "dark" ? "bg-gray-400" : "bg-gray-600"
-                                }`}
-                            >
-                                <div
-                                    className={`absolute w-8 h-8 bg-white border border-gray-400 rounded-full transition-all duration-300 ease-in-out transform ${
-                                        theme === "dark" ? "translate-x-8" : "translate-x-0"
-                                    } flex items-center justify-center text-sm`}
-                                >
-                                    {theme === "dark" ? "☀️" : "🌙"}
-                                </div>
-                            </div>
-                        </div> */}
                     </div>
                 </div>
             )}
