@@ -30,48 +30,75 @@ function Login() {
 
       // Step 3: Backend Authentication
       console.log('Sending request to backend...');
-      const response = await axios.post('http://localhost:5000/api/login', {
-        email,
-        password
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
+      try {
+        const response = await axios.post('http://localhost:5000/api/login', {
+          email,
+          password
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          timeout: 10000 // 10 second timeout
+        });
+        console.log('Backend response:', response.data);
+
+        // Step 4: Handle successful login
+        const { role, uid } = response.data;
+
+        // Store authentication data
+        localStorage.setItem('authToken', idToken);
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userId', uid);
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('isLoggedIn', 'true'); // Add this for NavBar
+
+        console.log('Role:', role);
+
+        // Navigate based on role
+        switch(role) {
+          case 'admin':
+            navigate('/admin-dashboard');
+            break;
+          case 'guide':
+            navigate('/guide-dashboard');
+            break;
+          default:
+            navigate('/');
         }
-      });
-      console.log('Backend response:', response.data);
-
-      // Step 4: Handle successful login
-      const { role, uid } = response.data;
-
-      // Store authentication data
-      localStorage.setItem('authToken', idToken);
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userId', uid);
-      localStorage.setItem('userEmail', email);
-
-      console.log('Role:', role);
-
-      // Navigate based on role
-      switch(role) {
-        case 'admin':
-          navigate('/admin-dashboard');
-          break;
-        case 'guide':
-          navigate('/guide-dashboard');
-          break;
-        default:
-          navigate('/');
+      } catch (backendError) {
+        console.error('Backend authentication error:', backendError);
+        if (backendError.response) {
+          setError(backendError.response.data.error || 'Login failed on server');
+        } else if (backendError.request) {
+          // Request was made but no response received
+          setError('Unable to reach the server. Please check your connection.');
+        } else {
+          setError('An error occurred during authentication');
+        }
+        
+        // Even if backend fails, we might still want to allow login if Firebase succeeded
+        // Uncomment the following code if you want to enable this fallback
+        /*
+        console.log('Allowing Firebase-only login as fallback');
+        localStorage.setItem('authToken', idToken);
+        localStorage.setItem('userRole', 'user'); // Default role
+        localStorage.setItem('userId', userCredential.user.uid);
+        localStorage.setItem('userEmail', email);
+        localStorage.setItem('isLoggedIn', 'true');
+        navigate('/');
+        */
       }
-
-    } catch (err) {
-      console.error('Login error:', err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+    } catch (firebaseError) {
+      console.error('Firebase login error:', firebaseError);
+      if (firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
         setError('Invalid email or password');
-      } else if (err.response) {
-        setError(err.response.data.error || 'Login failed');
+      } else if (firebaseError.code === 'auth/too-many-requests') {
+        setError('Too many failed login attempts. Please try again later.');
+      } else if (firebaseError.code === 'auth/network-request-failed') {
+        setError('Network error. Please check your connection.');
       } else {
-        setError('Unable to connect to the server');
+        setError(`Login failed: ${firebaseError.message}`);
       }
     } finally {
       setIsLoading(false);

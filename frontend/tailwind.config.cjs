@@ -6,6 +6,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        fireGradientStart: '#ff4500',
+        fireGradientMiddle: '#ff6347',
+        fireGradientEnd: '#ff8c00',
+        fireGradientLight: '#ffd700', 
         green: '#283226',
         black: '#151515',
         khaki: '#666048',
@@ -25,6 +29,10 @@ module.exports = {
           white: '#F0F0F0',
         },
       },
+      backgroundImage: {
+        'fire-gradient': 'linear-gradient(to right, #ff4500, #ff6347, #ff8c00, #ffd700)', 
+        'heroSec': 'https://burundipearl.com/wp-content/uploads/2020/10/9067465457e4814c3ff4456aa44508bd-768x513.jpg',
+      },
       fontFamily: {
         poppins: ['"Poppins"', 'sans-serif'],
       },
@@ -37,7 +45,7 @@ module.exports = {
     },
   },
   plugins: [
-    function({ addUtilities }) {
+    function ({ addUtilities }) {
       addUtilities({
         '.no-scrollbar': {
           '-ms-overflow-style': 'none',

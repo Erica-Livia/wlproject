@@ -9,6 +9,9 @@ import Footer from "./components/Footer";
 import UserSettings from "./pages/UserSettings";
 import ADashboard from "./pages/adminview/Dashboard";
 import GDashboard from "./pages/guideview/Dashboard";
+import QuizPage from "./pages/QuizPage";
+import DestinationPage from "./pages/DestinationsPage";
+import DestinationDetailsPage from "./pages/DestinationDetailsPage";
 // import ProtectedRoute from "./ProtectedRoute"; 
 
 function App() {
@@ -48,9 +51,14 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<WelcomePage theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/login" element={<LoginPage theme={theme} />} />
-          <Route path="/signup" element={<SignUpPage theme={theme} />} />
+          <Route path="/signup" element={<SignUpPage theme={theme}  />} />
+          <Route path="/settings" element={<UserSettings theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/quizz" element={<QuizPage theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/admin-dashboard" element={<ADashboard />} />
           <Route path="/guide-dashboard" element={<GDashboard />} />
+          <Route path="/destinations" element={<DestinationPage theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/destination-details/:id" element={<DestinationDetailsPage theme={theme} toggleTheme={toggleTheme}/>} />
+
 
           {/* Protected routes */}
           <Route path="/settings" element={<UserSettings />} />
@@ -72,7 +80,7 @@ function App() {
           } 
         />*/}
         </Routes> 
-        <Footer theme={theme} />
+        {/* <Footer theme={theme} /> */}
       </div>
     </Router>
   );
