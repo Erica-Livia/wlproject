@@ -21,23 +21,23 @@ function GDashboard() {
                 <h1 className="text-3xl font-bold mb-8">Guide Dashboard</h1>
 
                 {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-black">
                     {/* Card 1: User Interactions */}
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-semibold text-gray-700">User Interactions</h2>
-                        <p className="text-3xl font-bold text-green-600 mt-2">{userInteractions}</p>
+                        <p className="text-3xl font-bold  mt-2">{userInteractions}</p>
                     </div>
 
                     {/* Card 2: Rating */}
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-semibold text-gray-700">Rating</h2>
-                        <p className="text-3xl font-bold text-yellow-500 mt-2">{rating}</p>
+                        <p className="text-3xl font-bold  mt-2">{rating}</p>
                     </div>
 
                     {/* Card 3: Office Hours */}
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-semibold text-gray-700">Office Hours</h2>
-                        <p className="text-3xl font-bold text-blue-600 mt-2">{officeHours}</p>
+                        <p className="text-xl font-bold mt-2">{officeHours}</p>
                     </div>
 
                     {/* Card 4: Ranking */}

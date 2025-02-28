@@ -56,9 +56,9 @@ function GuideNav() {
 
     return (
         <>
-            <div className="font-poppins h-screen space-y-8 pl-8 py-8 w-80 bg-guidebg">
+            <div className="font-poppins h-screen space-y-8 pl-6 py-8 w-80 bg-guidebg">
                 <div className="text-24px font-bold pb-4">
-                    <a href="/guide-dashboard">Wanderlust Guide</a>
+                    <a href="/guide-dashboard">Wanderlust Tour Guide</a>
                 </div>
 
                 <div className="text-18px">

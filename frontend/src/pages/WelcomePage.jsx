@@ -6,6 +6,7 @@ import DestGroupCard from "../components/DestGroupCard";
 import InteractiveMap from "../components/Map";
 import NavBar from "../components/NavBar";
 import TawkToScript from "../components/TawkToScript";
+import Footer from "../components/Footer";
 
 function WelcomePage({ theme, toggleTheme }) {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -82,7 +83,7 @@ function WelcomePage({ theme, toggleTheme }) {
                         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 justify-center animate-fadeIn">
                             <Link
                                 to="/destinations"
-                                className={`group flex items-center justify-center py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 ${
+                                className={`group flex items-center justify-center py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 font-poppins font-bold border hover:bg-khaki ${
                                     theme === "dark"
                                         ? "bg-green-500 text-white hover:bg-green-600"
                                         : "bg-green-500 text-white hover:bg-green-600"
@@ -355,6 +356,7 @@ function WelcomePage({ theme, toggleTheme }) {
                         </Link>
                     </div>
                 </div>
+                <Footer />
             </div>
         </>
     );

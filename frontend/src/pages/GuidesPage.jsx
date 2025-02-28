@@ -5,7 +5,9 @@ import { FaSearch, FaStar } from "react-icons/fa";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "../firebase";
 import Skeleton from "react-loading-skeleton";
+import TawkToScript from "../components/TawkToScript";
 import "react-loading-skeleton/dist/skeleton.css";
+import Footer from "../components/Footer";
 
 function GuidesPage({ theme, toggleTheme }) {
     const [guides, setGuides] = useState([]);
@@ -135,6 +137,8 @@ function GuidesPage({ theme, toggleTheme }) {
                     </button>
                 </div>
             )}
+            <TawkToScript />
+            <Footer />
         </>
     );
 }
