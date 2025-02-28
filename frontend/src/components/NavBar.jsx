@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaSearch, FaUserCircle, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
 
 function NavBar({ theme, toggleTheme, role }) {
     // Check localStorage on component mount
@@ -22,14 +24,25 @@ function NavBar({ theme, toggleTheme, role }) {
     }, [isLoggedIn]);
     
     // Handle logout
-    const handleLogout = () => {
-        setIsLoggedIn(false);
-        setShowLogoutModal(false);
-        setMobileMenuOpen(false);
-        // Add any additional logout logic here (e.g., clearing other localStorage items, redirecting, etc.)
-        window.location.href = "/";
-    };
+    const handleLogout = async () => {
+        try {
+            // Sign out from Firebase
+            await signOut(auth);
     
+            // Clear local state
+            setIsLoggedIn(false);
+            setShowLogoutModal(false);
+            setMobileMenuOpen(false);
+    
+            // Clear localStorage if needed
+            localStorage.removeItem('user'); // Example: Remove user data from localStorage
+    
+            // Redirect to the home page
+            window.location.href = "/"; // Force a full page reload to reset the app state
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    };
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {

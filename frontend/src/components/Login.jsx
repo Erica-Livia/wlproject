@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import axios from 'axios';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase'; // Import db from Firebase config
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore'; // Firestore methods
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -19,75 +20,57 @@ function Login() {
     setError('');
 
     try {
-      // Step 1: Firebase Authentication
       console.log('Attempting Firebase authentication...');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('Firebase authentication successful');
 
-      // Step 2: Get Firebase ID token
-      const idToken = await userCredential.user.getIdToken();
+      const user = userCredential.user;
+      const idToken = await user.getIdToken();
       console.log('Got Firebase ID token');
 
-      // Step 3: Backend Authentication
-      console.log('Sending request to backend...');
-      try {
-        const response = await axios.post('http://localhost:5000/api/login', {
-          email,
-          password
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          timeout: 10000 // 10 second timeout
-        });
-        console.log('Backend response:', response.data);
+      // Retrieve user role from Firestore
+      console.log('Fetching user role from Firestore...');
+      const userDoc = await getDoc(doc(db, 'users', user.uid)); // Fetch Firestore doc
 
-        // Step 4: Handle successful login
-        const { role, uid } = response.data;
+      let role = '';
+      if (userDoc.exists() && userDoc.data().role) {
+        role = userDoc.data().role;
+      }
+      console.log('User role:', role);
+
+      // Backend authentication (optional)
+      try {
+        const response = await axios.post(
+          'http://localhost:5000/api/login',
+          { email, password },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`
+            },
+            timeout: 10000
+          }
+        );
+        console.log('Backend response:', response.data);
 
         // Store authentication data
         localStorage.setItem('authToken', idToken);
         localStorage.setItem('userRole', role);
-        localStorage.setItem('userId', uid);
+        localStorage.setItem('userId', user.uid);
         localStorage.setItem('userEmail', email);
-        localStorage.setItem('isLoggedIn', 'true'); // Add this for NavBar
-
-        console.log('Role:', role);
+        localStorage.setItem('isLoggedIn', 'true');
 
         // Navigate based on role
-        switch(role) {
-          case 'admin':
-            navigate('/admin-dashboard');
-            break;
-          case 'guide':
-            navigate('/guide-dashboard');
-            break;
-          default:
-            navigate('/');
+        if (role === 'guide') {
+          navigate('/guide-dashboard');
+        } else if (role === 'admin') {
+          navigate('/admin-dashboard')
+        } else        {
+          navigate('/');
         }
       } catch (backendError) {
         console.error('Backend authentication error:', backendError);
-        if (backendError.response) {
-          setError(backendError.response.data.error || 'Login failed on server');
-        } else if (backendError.request) {
-          // Request was made but no response received
-          setError('Unable to reach the server. Please check your connection.');
-        } else {
-          setError('An error occurred during authentication');
-        }
-        
-        // Even if backend fails, we might still want to allow login if Firebase succeeded
-        // Uncomment the following code if you want to enable this fallback
-        /*
-        console.log('Allowing Firebase-only login as fallback');
-        localStorage.setItem('authToken', idToken);
-        localStorage.setItem('userRole', 'user'); // Default role
-        localStorage.setItem('userId', userCredential.user.uid);
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('isLoggedIn', 'true');
-        navigate('/');
-        */
+        setError(backendError.response?.data?.error || 'Login failed on server');
       }
     } catch (firebaseError) {
       console.error('Firebase login error:', firebaseError);

@@ -11,17 +11,18 @@ function SignUp() {
     firstName: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'user' // Default role
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;  // Correct destructuring (use 'name' instead of 'firstName' and 'lastName')
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value  // Dynamically update the correct field based on 'name'
+      [name]: value
     }));
   };
 
@@ -57,7 +58,7 @@ function SignUp() {
 
       // Update profile with full name
       await updateProfile(userCredential.user, {
-        displayName: `${formData.firstName} ${formData.lastName}`  // Correctly use firstName and lastName
+        displayName: `${formData.firstName} ${formData.lastName}`
       });
       console.log('Profile updated');
 
@@ -66,7 +67,8 @@ function SignUp() {
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        password: formData.password
+        password: formData.password,
+        role: formData.role // Include role in the request
       });
       console.log('Backend response:', response.data);
 
@@ -80,7 +82,7 @@ function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center font-poppins justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-textWhite p-8 rounded-xl shadow-lg">
         {/* Header */}
         <div className="text-center">
@@ -135,6 +137,8 @@ function SignUp() {
                 placeholder="Last name"
               />
             </div>
+
+            {/* Email */}
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -147,6 +151,8 @@ function SignUp() {
                 placeholder="Email address"
               />
             </div>
+
+            {/* Password */}
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -159,6 +165,8 @@ function SignUp() {
                 placeholder="Password"
               />
             </div>
+
+            {/* Confirm Password */}
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
@@ -170,6 +178,20 @@ function SignUp() {
                 className="appearance-none rounded-lg relative block w-full pl-12 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm password"
               />
+            </div>
+
+            {/* Role Selection */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700">Role</label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleInputChange}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-black border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                <option value="user">User</option>
+                <option value="guide">Guide</option>
+              </select>
             </div>
           </div>
 

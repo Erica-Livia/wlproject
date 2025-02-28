@@ -7,11 +7,18 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import Footer from "./components/Footer";
 import UserSettings from "./pages/UserSettings";
-import ADashboard from "./pages/adminview/Dashboard";
+import ADashboard from "./pages/adminview/ADashboard";
 import GDashboard from "./pages/guideview/Dashboard";
 import QuizPage from "./pages/QuizPage";
 import DestinationPage from "./pages/DestinationsPage";
 import DestinationDetailsPage from "./pages/DestinationDetailsPage";
+import GuidesPage from "./pages/GuidesPage";
+import GuideProfileSetting from "./pages/guideview/GuideProfileSetting";
+import GuideDetailsPage from "./pages/GuideDetailsPage";
+import UsersList from "./pages/adminview/UsersList";
+import DestinationsList from "./pages/adminview/DestinationsList";
+import GuidesList from "./pages/adminview/GuidesList";
+import CreateDestination from "./pages/adminview/DestinationCreation";
 // import ProtectedRoute from "./ProtectedRoute"; 
 
 function App() {
@@ -57,7 +64,16 @@ function App() {
           <Route path="/admin-dashboard" element={<ADashboard />} />
           <Route path="/guide-dashboard" element={<GDashboard />} />
           <Route path="/destinations" element={<DestinationPage theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/guides" element={<GuidesPage theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/guide-profile-setting" element={<GuideProfileSetting theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/destination-details/:id" element={<DestinationDetailsPage theme={theme} toggleTheme={toggleTheme}/>} />
+          <Route path="/guide-details/:id" element={<GuideDetailsPage theme={theme} toggleTheme={toggleTheme}/>} />
+          <Route path="/admin-users-list" element={<UsersList />} />
+          <Route path="/admin-guides-list" element={<GuidesList />} />
+          <Route path="/admin-destinations-list" element={<DestinationsList />} />
+          <Route path="/admin-destinations-create" element={<CreateDestination />} />
+
+          
 
 
           {/* Protected routes */}

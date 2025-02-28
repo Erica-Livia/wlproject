@@ -15,10 +15,10 @@ function AdminNav() {
 
             <div className="text-18px ">
                 <ul className="space-y-8">
-                    <li><a href="/users-list"  className="flex items-center underline"><RxDashboard className="text-24px mr-2" /> Dashboard</a></li>
-                    <li><a href="/users-list"  className="flex items-center"><PiUsersThreeLight className="text-24px mr-2" /> Users</a></li>
-                    <li><a href="/users-list"  className="flex items-center"><PiUserCircleCheck className="text-24px mr-2" /> Guides</a></li>
-                    <li><a href="/users-list"  className="flex items-center"><GoReport className="text-24px mr-2" /> Reports</a></li>
+                    <li><a href="/admin-dashboard"  className="flex items-center underline"><RxDashboard className="text-24px mr-2" /> Dashboard</a></li>
+                    <li><a href="/admin-users-list"  className="flex items-center"><PiUsersThreeLight className="text-24px mr-2" /> Users</a></li>
+                    <li><a href="/admin-guides-list"  className="flex items-center"><PiUserCircleCheck className="text-24px mr-2" /> Guides</a></li>
+                    <li><a href="/admin-reports-list"  className="flex items-center"><GoReport className="text-24px mr-2" /> Reports</a></li>
                     <li><a href="/users-list"  className="flex items-center"><PiUserBold className="text-24px mr-2" /> Profile Settings</a></li>
                 </ul>
             </div>
