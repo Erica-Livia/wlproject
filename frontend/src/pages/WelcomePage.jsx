@@ -5,6 +5,7 @@ import DestinationCard from "../components/DestinationCard";
 import DestGroupCard from "../components/DestGroupCard";
 import InteractiveMap from "../components/Map";
 import NavBar from "../components/NavBar";
+import TawkToScript from "../components/TawkToScript";
 
 function WelcomePage({ theme, toggleTheme }) {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -106,6 +107,7 @@ function WelcomePage({ theme, toggleTheme }) {
                                 </Link>
                             )}
                         </div>
+                        <TawkToScript />
                     </div>
                 </div>
                 
