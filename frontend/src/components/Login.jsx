@@ -18,59 +18,40 @@ function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
+  
     try {
       console.log('Attempting Firebase authentication...');
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('Firebase authentication successful');
-
+  
       const user = userCredential.user;
       const idToken = await user.getIdToken();
       console.log('Got Firebase ID token');
-
+  
       // Retrieve user role from Firestore
       console.log('Fetching user role from Firestore...');
       const userDoc = await getDoc(doc(db, 'users', user.uid)); // Fetch Firestore doc
-
+  
       let role = '';
       if (userDoc.exists() && userDoc.data().role) {
         role = userDoc.data().role;
       }
       console.log('User role:', role);
-
-      // Backend authentication (optional)
-      try {
-        const response = await axios.post(
-          'http://localhost:5000/api/login',
-          { email, password },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`
-            },
-            timeout: 10000
-          }
-        );
-        console.log('Backend response:', response.data);
-
-        // Store authentication data
-        localStorage.setItem('authToken', idToken);
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userId', user.uid);
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('isLoggedIn', 'true');
-
-        // Navigate based on role
-        if (role === 'guide') {
-          navigate('/guide-dashboard');
-        } else if (role === 'admin') {
-          navigate('/admin-dashboard')
-        } else        {
-          navigate('/');
-        }
-      } catch (backendError) {
-        console.error('Backend authentication error:', backendError);
-        setError(backendError.response?.data?.error || 'Login failed on server');
+  
+      // Store authentication data
+      localStorage.setItem('authToken', idToken);
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userId', user.uid);
+      localStorage.setItem('userEmail', email);
+      localStorage.setItem('isLoggedIn', 'true');
+  
+      // Navigate based on role
+      if (role === 'guide') {
+        navigate('/guide-dashboard');
+      } else if (role === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/');
       }
     } catch (firebaseError) {
       console.error('Firebase login error:', firebaseError);
@@ -87,6 +68,7 @@ function Login() {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen font-poppins flex items-center justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">

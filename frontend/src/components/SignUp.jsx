@@ -41,13 +41,13 @@ function SignUp() {
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     setIsLoading(true);
     setError('');
-
+  
     try {
       console.log('Starting signup process...', formData);
-
+  
       // First, create user in Firebase
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -55,24 +55,27 @@ function SignUp() {
         formData.password
       );
       console.log('Firebase auth success:', userCredential);
-
+  
       // Update profile with full name
       await updateProfile(userCredential.user, {
         displayName: `${formData.firstName} ${formData.lastName}`
       });
       console.log('Profile updated');
-
-      // Register with backend
-      const response = await axios.post('http://localhost:5000/api/signup', {
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        password: formData.password,
-        role: formData.role // Include role in the request
-      });
-      console.log('Backend response:', response.data);
-
-      navigate('/login');
+  
+      // Store user information in localStorage
+      localStorage.setItem('userId', userCredential.user.uid);
+      localStorage.setItem('userEmail', formData.email);
+      localStorage.setItem('userRole', formData.role);
+      localStorage.setItem('isLoggedIn', 'true');
+  
+      // Navigate to login or dashboard based on role
+      if (formData.role === 'guide') {
+        navigate('/guide-dashboard');
+      } else if (formData.role === 'admin') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       console.error('Signup error:', err);
       setError(err.message || 'Failed to create account');
@@ -80,6 +83,7 @@ function SignUp() {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen flex items-center font-poppins justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
