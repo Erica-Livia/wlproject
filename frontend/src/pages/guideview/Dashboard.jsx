@@ -38,7 +38,7 @@ function GDashboard() {
 
         // Fetch money earned (dummy data for now)
         // Replace this with actual logic to calculate earnings
-        const earnings = 2500; // Example: Fetch from payments collection
+        const earnings = 200;
         setMoneyEarned(earnings);
       } catch (error) {
         console.error("Error fetching guide data:", error);
