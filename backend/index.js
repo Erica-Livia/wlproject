@@ -169,6 +169,40 @@ app.post('/api/updateRole', async (req, res) => {
         res.status(403).json({ error: 'Unauthorized to update roles' });
     }
 });
+// fetch user's bookings
+app.get('/api/bookings', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: "User ID is required" });
+
+    try {
+        const bookingsRef = db.collection('bookings').where('userId', '==', userId);
+        const snapshot = await bookingsRef.get();
+
+        let bookings = [];
+        snapshot.forEach(doc => {
+            bookings.push({ id: doc.id, ...doc.data() });
+        });
+
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch bookings" });
+    }
+});
+
+// updae booking status after payment
+app.post('/api/bookings/pay', async (req, res) => {
+    const { bookingId } = req.body;
+    if (!bookingId) return res.status(400).json({ error: "Booking ID is required" });
+
+    try {
+        const bookingRef = db.collection('bookings').doc(bookingId);
+        await bookingRef.update({ status: "Paid" });
+
+        res.json({ success: true, message: "Booking marked as paid" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to update booking" });
+    }
+});
 
 
 // Verify token middleware
@@ -187,6 +221,8 @@ const verifyToken = async (req, res, next) => {
         res.status(401).json({ error: 'Invalid token' });
     }
 };
+
+
 
 // Protected route example
 app.get('/api/protected', verifyToken, (req, res) => {

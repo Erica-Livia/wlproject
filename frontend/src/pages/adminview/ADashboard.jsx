@@ -17,7 +17,7 @@ const StatCard = ({ title, count, icon: Icon, color = "bg-blue-500" }) => (
     <p className="text-3xl font-bold text-gray-900">{count}</p>
     <p className="text-green-500 text-sm mt-2 flex items-center">
       <TrendingUp size={14} className="mr-1" />
-      <span>+12% from last month</span>
+      <span>+10% from last month</span>
     </p>
   </div>
 );

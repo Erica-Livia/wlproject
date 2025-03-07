@@ -5,11 +5,12 @@ import { PiUserCircleCheck } from "react-icons/pi";
 import { BsCalendar4Week } from "react-icons/bs";
 import { PiUserBold } from "react-icons/pi";
 import { FiChevronDown, FiChevronUp, FiLogOut } from "react-icons/fi";
-import { MdSettings } from "react-icons/md";
+import { MdSettings, MdInbox } from "react-icons/md";
 import { signOut } from 'firebase/auth';
 import { Link } from "react-router-dom";
+import { auth } from "../firebase";
 
-function GuideNav() {
+function GuideNav({ theme }) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const dropdownRef = useRef(null);
@@ -35,9 +36,7 @@ function GuideNav() {
             await signOut(auth);
 
             // Clear local state
-            setIsLoggedIn(false);
             setShowLogoutModal(false);
-            setMobileMenuOpen(false);
 
             // Clear localStorage if needed
             localStorage.removeItem('guide'); // Example: Remove user data from localStorage
@@ -56,28 +55,35 @@ function GuideNav() {
 
     return (
         <>
-            <div className="font-poppins h-screen space-y-8 pl-6 py-8 w-80 bg-guidebg">
+            <div className="font-poppins h-screen space-y-8 pl-6 py-8 w-80 bg-guidebg text-white">
                 <div className="text-24px font-bold pb-4">
                     <a href="/guide-dashboard">Wanderlust Tour Guide</a>
                 </div>
 
                 <div className="text-18px">
                     <ul className="space-y-8">
+                        {/* Dashboard */}
                         <li>
                             <Link to="/guide-dashboard" className="flex items-center">
                                 <RxDashboard className="text-24px mr-2" /> Dashboard
                             </Link>
                         </li>
+
+                        {/* Inbox */}
                         <li>
-                            <Link to="/users-list" className="flex items-center">
-                                <BsCalendar4Week className="text-24px mr-2" /> Bookings
+                            <Link to="/guide-inbox" className="flex items-center">
+                                <MdInbox className="text-24px mr-2" /> Inbox
                             </Link>
                         </li>
+
+                        {/* Reviews */}
                         <li>
                             <Link to="/guide-reviews" className="flex items-center">
                                 <FaStarHalfStroke className="text-24px mr-2" /> Reviews
                             </Link>
                         </li>
+
+                        {/* Profile Dropdown */}
                         <li ref={dropdownRef} className="relative">
                             <button
                                 onClick={toggleDropdown}
@@ -94,20 +100,20 @@ function GuideNav() {
                             {/* Dropdown Menu */}
                             {isDropdownOpen && (
                                 <div className="absolute left-8 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10 text-16px">
+                                    {/* Profile Settings */}
                                     <Link
                                         to="/guide-profile-setting"
                                         className="block px-4 py-2 text-gray-800 hover:bg-gray-100 flex items-center"
                                     >
                                         <MdSettings className="mr-2" /> Profile Settings
                                     </Link>
+
+                                    {/* Logout */}
                                     <button
-                                        onClick={() => {
-                                            setShowLogoutModal(true);
-                                            setMobileMenuOpen(false);
-                                        }}
-                                        className="flex items-center text-left"
+                                        onClick={() => setShowLogoutModal(true)}
+                                        className="w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100 flex items-center"
                                     >
-                                        <FaSignOutAlt className="mr-2" /> Logout
+                                        <FiLogOut className="mr-2" /> Logout
                                     </button>
                                 </div>
                             )}
@@ -115,6 +121,8 @@ function GuideNav() {
                     </ul>
                 </div>
             </div>
+
+            {/* Logout Confirmation Modal */}
             {showLogoutModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className={`p-6 rounded-lg shadow-lg max-w-sm w-full ${theme === "dark" ? "bg-white text-green" : "bg-green text-textWhite"

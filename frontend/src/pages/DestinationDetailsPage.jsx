@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { FaStar, FaRegStar, FaChevronLeft } from "react-icons/fa";
 import NavBar from "../components/NavBar";
@@ -8,6 +8,7 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import LoginPage from "./LoginPage";
+import StartChat from "../components/StartChat";
 
 function DestinationDetailsPage({ theme, toggleTheme }) {
     const { id } = useParams();
@@ -20,6 +21,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
     const [reviewTitle, setReviewTitle] = useState("");
     const [reviewDescription, setReviewDescription] = useState("");
     const [reviewRating, setReviewRating] = useState(0);
+    const [guides, setGuides] = useState([]);
     const user = auth.currentUser;
 
     useEffect(() => {
@@ -43,6 +45,15 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                     ...doc.data(),
                 }));
                 setReviews(fetchedReviews);
+
+                // Fetch affiliated guides
+                const guidesQuery = query(collection(db, "guides"), where("destinationId", "==", id));
+                const guidesSnapshot = await getDocs(guidesQuery);
+                const fetchedGuides = guidesSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setGuides(fetchedGuides);
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
@@ -93,6 +104,57 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
             alert("Review submitted!");
         } catch (error) {
             console.error("Error submitting review:", error);
+        }
+    };
+
+    const handleContactGuide = async (guideId) => {
+        if (!user) {
+            setShowLoginModal(true);
+            return;
+        }
+
+        try {
+            // Check if a chat session already exists
+            const chatSessionQuery = query(
+                collection(db, "chatSessions"),
+                where("guideId", "==", guideId),
+                where("userId", "==", user.uid)
+            );
+            const chatSessionSnapshot = await getDocs(chatSessionQuery);
+
+            let chatId;
+
+            if (chatSessionSnapshot.empty) {
+                // Create a new chat session
+                const newChatSession = await addDoc(collection(db, "chatSessions"), {
+                    guideId,
+                    userId: user.uid,
+                    userName: user.displayName || "Anonymous",
+                    guideName: guides.find((g) => g.id === guideId)?.name || "Guide",
+                    lastMessage: "Chat started",
+                    lastMessageTimestamp: serverTimestamp(),
+                    status: "active",
+                });
+
+                chatId = newChatSession.id;
+
+                // Add the first message to the chats collection
+                await addDoc(collection(db, "chats"), {
+                    guideId,
+                    userId: user.userId,
+                    userName: user.name,
+                    message: "Hello, I need help!",
+                    timestamp: serverTimestamp(),
+                });
+            } else {
+                // Use the existing chat session ID
+                chatId = chatSessionSnapshot.docs[0].id;
+            }
+
+            // Redirect to the chat page
+            navigate(`/chat/${guideId}`);
+        } catch (error) {
+            console.error("Error starting chat:", error);
         }
     };
 
@@ -173,6 +235,26 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                     <div className="mt-6 bg-gray-100 p-4 rounded-lg">
                         <p><strong>Best Time to Visit:</strong> {destination.bestTime || "All year round"}</p>
                         <p><strong>Activities:</strong> {destination.activities || "Hiking, sightseeing, cultural tours"}</p>
+                    </div>
+
+                    {/* Affiliated Guides Section */}
+                    <div className="mt-6">
+                        <h3 className="text-lg font-semibold mb-4">Tour Guides</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {guides.map((guide) => (
+                                <div key={guide.id} className="bg-gray-100 p-4 rounded-lg shadow-sm">
+                                    <img src={guide.profilePictureUrl} alt={guide.name} className="w-24 h-24 rounded-full mx-auto mb-4" />
+                                    <h4 className="text-center font-semibold">{guide.name}</h4>
+                                    <p className="text-center text-sm text-gray-600">{guide.category}</p>
+                                    <button
+                                        onClick={() => navigate(`/book-guide/${guide.id}`)}
+                                        className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                                    >
+                                        Book Now
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Combined Rating and Reviews Section */}

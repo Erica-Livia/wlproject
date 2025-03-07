@@ -172,16 +172,20 @@ function DestinationPage({ theme, toggleTheme }) {
                     currentItems.map((destination) => (
                         <div
                             key={destination.id}
-                            className="bg-white text-black shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105 hover:shadow-xl"
+                            className="bg-white text-black shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105 hover:shadow-xl flex flex-col h-[500px]" // Fixed height for the card
                         >
                             <img
                                 src={destination.imageUrl || "https://source.unsplash.com/400x300/?travel"}
                                 alt={destination.title}
                                 className="w-full h-48 object-cover"
                             />
-                            <div className="p-4">
+                            <div className="p-4 flex flex-col flex-grow">
                                 <h3 className="text-lg font-semibold">{destination.title}</h3>
-                                <h4 className="text-sm text-gray-600">{destination.shortdesc}</h4>
+                                <h4 className="text-sm text-gray-600 overflow-hidden">
+                                    {destination.description.length > 150
+                                        ? `${destination.description.substring(0, 150)}...`
+                                        : destination.description}
+                                </h4>
                                 <p className="text-gray-500 text-sm mt-2">Category: {destination.category}</p>
                                 <div className="flex items-center mt-2">
                                     <FaStar className="text-yellow-500" />
@@ -189,9 +193,9 @@ function DestinationPage({ theme, toggleTheme }) {
                                         {destination.averageRating || "No ratings yet"}
                                     </span>
                                 </div>
-                                <Link to={`/destination-details/${destination.id}`}>
+                                <Link to={`/destination-details/${destination.id}`} className="mt-auto">
                                     <button className="mt-4 w-full bg-khaki text-white py-2 rounded-lg transition">
-                                        View Details
+                                        View More
                                     </button>
                                 </Link>
                             </div>
@@ -222,7 +226,7 @@ function DestinationPage({ theme, toggleTheme }) {
                     </button>
                 </div>
             )}
-            <TawkToScript />
+            {/* <TawkToScript /> */}
             <Footer />
         </>
     );

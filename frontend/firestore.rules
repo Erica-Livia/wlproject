@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow read access to the 'destinations' collection for all users
+    match /destinations/{documentId} {
+      allow read, write: if true;
+    }
+     // Allow read access to the 'quizQuestions' collection for all users
+    match /quizQuestions/{documentId} {
+      allow read: if true;
+    }
+    
+    // Allow read/write if the user is authenticated and the userId matches the authenticated user's ID
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+     // Allow read/write if the user is authenticated and the userId matches the authenticated user's ID
+    match /reviews/{userId} {
+      allow read, write: if true;
+    }
+    
+    match /guideReviews/{userId} {
+      allow read, write: if true;
+    }
+    
+    match /guideContacts/{userId} {
+      allow read: if true;
+    }
+    
+   match /chats/{chatId} {
+      allow read, write: if request.auth != null;
+    }
+    match /chatSessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+  
+    
+    // Allow read/write if the user is authenticated and the userId matches the authenticated user's ID
+    match /guides/{documentId} {
+      allow read, write: if true;
+    }
+    
+     match /bookings/{bookingId} {
+      allow create: if request.auth != null;
+    }
+     match /bookings/{bookingId} {
+      allow read, write: if true;
+    }
+    
+    // Allow read/write if the user is authenticated and the userId matches the authenticated user's ID
+    match /reports/{documentId} {
+      allow read, write: if true;
+    }
+    
+    // Deny write access to everyone
+    match /{document=**} {
+      allow write: if false;
+    }
+    
+     // Match all documents in the users collection
+    match /users/{userId} {
+      // Only allow read access to authenticated users with role 'admin'
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if request.auth != null && request.auth.uid == userId; // Allow users to write to their own document
+    }
+
+    // Allow admin to read all guides
+    match /guides/{guideId} {
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Allow admin to read all reports
+    match /reports/{reportId} {
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Allow admin to read all destinations
+    match /destinations/{destinationId} {
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}

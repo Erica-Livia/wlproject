@@ -93,7 +93,7 @@ function GuidesPage({ theme, toggleTheme }) {
                             className="bg-white text-black shadow-lg rounded-lg overflow-hidden transform transition hover:scale-105 hover:shadow-xl"
                         >
                             <img
-                                src={guide.imageUrl || "https://source.unsplash.com/400x300/?person"}
+                                src={guide.profilePictureUrl || "https://source.unsplash.com/400x300/?person"}
                                 alt={guide.name}
                                 className="w-full h-48 object-cover"
                             />
@@ -137,8 +137,8 @@ function GuidesPage({ theme, toggleTheme }) {
                     </button>
                 </div>
             )}
-            <TawkToScript />
-            <Footer />
+            {/* <TawkToScript /> */}
+            {/* <Footer /> */}
         </>
     );
 }

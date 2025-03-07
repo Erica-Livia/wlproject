@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaSearch, FaUserCircle, FaSignOutAlt, FaBars, FaTimes } from "react-icons/fa";
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { Link, useNavigate } from 'react-router-dom'; // Import Link and useNavigate
+import { Link, useNavigate } from 'react-router-dom';
+import { CiLogin } from "react-icons/ci";
 
 function NavBar({ theme, toggleTheme, role }) {
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -12,14 +13,22 @@ function NavBar({ theme, toggleTheme, role }) {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showMobileSearch, setShowMobileSearch] = useState(false);
-    
+    const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1124);
+
     const dropdownRef = useRef(null);
     const mobileMenuRef = useRef(null);
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate();
 
+    // Handle screen resize
     useEffect(() => {
-        localStorage.setItem('isLoggedIn', isLoggedIn);
-    }, [isLoggedIn]);
+        const handleResize = () => {
+            setIsMobileView(window.innerWidth <= 1124);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
 
     const handleLogout = async () => {
         try {
@@ -55,7 +64,7 @@ function NavBar({ theme, toggleTheme, role }) {
 
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth >= 768) {
+            if (window.innerWidth >= 1124) {
                 setMobileMenuOpen(false);
                 setShowMobileSearch(false);
             }
@@ -88,133 +97,129 @@ function NavBar({ theme, toggleTheme, role }) {
                 <div className="flex justify-between items-center">
                     {/* Logo/Title */}
                     <div className="text-24px font-bold">
-                        <Link to="/">WanderLust</Link> {/* Replaced <a> with <Link> */}
+                        <Link to="/">WanderLust</Link> 
                     </div>
 
-                    {/* Search Bar (Desktop) */}
-                    <div className={`hidden md:flex items-center rounded-lg space-x-2 ${
-                        theme === "dark" ? "bg-textWhite text-green border border-green" : "bg-green text-textWhite border border-white"
-                    }`}>
-                        <input
-                            type="text"
-                            placeholder="Search for Destinations..."
-                            className="bg-transparent focus:outline-none placeholder-gray-400 p-2 rounded-l-lg w-full md:w-64 lg:w-80"
-                        />
-                        <button className="p-2 rounded-r-lg">
-                            <FaSearch />
-                        </button>
-                    </div>
+                    {/* Desktop Navigation (only show if not in mobile view) */}
+                    {!isMobileView && (
+                        <>
+                            {/* Search Bar (Desktop) */}
+                            {/* <div className={`flex items-center rounded-lg space-x-2 ${
+                                theme === "dark" ? "bg-textWhite text-green border border-green" : "bg-green text-textWhite border border-white"
+                            }`}>
+                                <input
+                                    type="text"
+                                    placeholder="Search for Destinations..."
+                                    className="bg-transparent focus:outline-none placeholder-gray-400 p-2 rounded-l-lg w-full md:w-64 lg:w-80"
+                                />
+                                <button className="p-2 rounded-r-lg">
+                                    <FaSearch />
+                                </button>
+                            </div> */}
 
-                    {/* Desktop Navigation Links */}
-                    <div className="hidden md:flex items-center space-x-6">
-                        <ul className="list-none flex space-x-6 items-center">
-                            <li className="hover:opacity-75 transition-opacity">
-                                <Link to="/destinations">Destinations</Link> {/* Replaced <a> with <Link> */}
-                            </li>
-                            <li className="hover:opacity-75 transition-opacity">
-                                <Link to="/guides">Guides</Link> {/* Replaced <a> with <Link> */}
-                            </li>
-
-                            {/* Conditional Links for Logged-In User */}
-                            {isLoggedIn ? (
-                                <>
+                            {/* Desktop Navigation Links */}
+                            <div className="flex items-center space-x-6">
+                                <ul className="list-none flex space-x-6 items-center">
                                     <li className="hover:opacity-75 transition-opacity">
-                                        <Link to="/tours">My Tours</Link> {/* Replaced <a> with <Link> */}
+                                        <Link to="/">Home</Link> 
                                     </li>
                                     <li className="hover:opacity-75 transition-opacity">
-                                        <Link to="/quizz">Quizzes</Link> {/* Replaced <a> with <Link> */}
+                                        <Link to="/destinations">Destinations</Link> 
                                     </li>
-                                    <li className="relative" ref={dropdownRef}>
-                                        <div 
-                                            className="flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setShowDropdown(!showDropdown);
-                                            }}
-                                        >
-                                            <FaUserCircle size={24} />
-                                        </div>
-                                        
-                                        {/* User Dropdown */}
-                                        {showDropdown && (
-                                            <div 
-                                                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
-                                                    theme === "dark" ? "bg-white text-green" : "bg-green text-textWhite"
-                                                }`}
-                                            >
-                                                <Link to="/profile" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
-                                                    Profile
-                                                </Link> {/* Replaced <a> with <Link> */}
-                                                <Link to="/settings" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
-                                                    Settings
-                                                </Link> {/* Replaced <a> with <Link> */}
-                                                <button 
-                                                    onClick={() => {
-                                                        setShowLogoutModal(true);
-                                                        setShowDropdown(false);
+                                    <li className="hover:opacity-75 transition-opacity">
+                                        <Link to="/guides">Guides</Link> 
+                                    </li>
+
+                                    {/* Conditional Links for Logged-In User */}
+                                    {isLoggedIn ? (
+                                        <>
+                                            <li className="hover:opacity-90 transition-opacity">
+                                                <Link to="/mybookings">My Bookings</Link> 
+                                            </li>
+                                            <li className="hover:opacity-75 transition-opacity">
+                                                <Link to="/quizz">Quizzes</Link> 
+                                            </li>
+                                            <li className="relative" ref={dropdownRef}>
+                                                <div 
+                                                    className="flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setShowDropdown(!showDropdown);
                                                     }}
-                                                    className="flex items-center w-full text-left px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200"
                                                 >
-                                                    <FaSignOutAlt className="mr-2" /> Logout
-                                                </button>
-                                            </div>
-                                        )}
-                                    </li>
-                                </>
-                            ) : (
-                                <li className="hover:opacity-75 transition-opacity">
-                                    <Link to="/login" className={`px-4 py-2 rounded-full ${
-                                        theme === "dark" ? "bg-green text-white" : "bg-white text-green" 
-                                    }`}>Login</Link> {/* Replaced <a> with <Link> */}
-                                </li>
-                            )}
-                        </ul>
-
-                        {/* Animated Theme Toggle Button */}
-                        <div
-                            onClick={toggleTheme}
-                            className={`relative w-12 h-6 flex items-center rounded-full cursor-pointer transition-all duration-300 ease-in-out ${
-                                theme === "dark" ? "bg-gray-400" : "bg-gray-600"
-                            }`}
-                        >
-                            <div
-                                className={`absolute w-6 h-6 bg-white border border-gray-400 rounded-full transition-all duration-300 ease-in-out transform ${
-                                    theme === "dark" ? "translate-x-6" : "translate-x-0"
-                                } flex items-center justify-center text-xs`}
-                            >
-                                {theme === "dark" ? "☀️" : "🌙"}
+                                                    <FaUserCircle size={24} />
+                                                </div>
+                                                
+                                                {/* User Dropdown */}
+                                                {showDropdown && (
+                                                    <div 
+                                                        className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                                                            theme === "dark" ? "bg-white text-green" : "bg-green text-textWhite"
+                                                        }`}
+                                                    >
+                                                        <Link to="/profile" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
+                                                            Profile
+                                                        </Link>
+                                                        <Link to="/settings" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
+                                                            Settings
+                                                        </Link>
+                                                        <button 
+                                                            onClick={() => {
+                                                                setShowLogoutModal(true);
+                                                                setShowDropdown(false);
+                                                            }}
+                                                            className="flex items-center w-full text-left px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200"
+                                                        >
+                                                            <FaSignOutAlt className="mr-2" /> Logout
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        </>
+                                    ) : (
+                                        <li className="hover:opacity-75 transition-opacity">
+                                            <Link to="/login" className={`py-2 rounded-full flex items-center${
+                                                theme === "dark" ? " text-green" : "text-green" 
+                                            }`}><CiLogin className="text-18px mr-1"/>Login</Link>
+                                        </li>
+                                    )}
+                                </ul>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
 
-                    {/* Mobile Search and Menu Toggle */}
-                    <div className="flex md:hidden items-center space-x-3">
-                        <button
-                            onClick={() => setShowMobileSearch(!showMobileSearch)}
-                            className="p-2 hover:opacity-75 transition-opacity"
-                        >
-                            <FaSearch size={20} />
-                        </button>
-                        
-                        <button
-                            className="hamburger-icon p-2 hover:opacity-75 transition-opacity"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setMobileMenuOpen(!mobileMenuOpen);
-                            }}
-                        >
-                            {mobileMenuOpen ? (
-                                <FaTimes size={24} />
-                            ) : (
-                                <FaBars size={24} />
-                            )}
-                        </button>
-                    </div>
+                    {/* Mobile Navigation (only show if in mobile view) */}
+                    {isMobileView && (
+                        <div className="flex items-center space-x-3">
+                            {/* Mobile Search Toggle */}
+                            <button
+                                onClick={() => setShowMobileSearch(!showMobileSearch)}
+                                className="p-2 hover:opacity-75 transition-opacity"
+                            >
+                                <FaSearch size={20} />
+                            </button>
+                            
+                            {/* Mobile Menu Toggle */}
+                            <button
+                                className="hamburger-icon p-2 hover:opacity-75 transition-opacity"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMobileMenuOpen(!mobileMenuOpen);
+                                }}
+                            >
+                                {mobileMenuOpen ? (
+                                    <FaTimes size={24} />
+                                ) : (
+                                    <FaBars size={24} />
+                                )}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 
                 {/* Mobile Search Bar (Collapsible) */}
-                {showMobileSearch && (
-                    <div className={`mt-4 md:hidden rounded-lg ${
+                {showMobileSearch && isMobileView && (
+                    <div className={`mt-4 rounded-lg ${
                         theme === "dark" ? "bg-textWhite text-green border border-green" : "bg-green text-textWhite border border-white"
                     }`}>
                         <div className="flex items-center">
@@ -232,36 +237,36 @@ function NavBar({ theme, toggleTheme, role }) {
             </div>
             
             {/* Mobile Menu Overlay */}
-            {mobileMenuOpen && (
+            {mobileMenuOpen && isMobileView && (
                 <div 
                     ref={mobileMenuRef}
-                    className={`fixed inset-0 z-40 md:hidden overflow-y-auto pt-16 ${
+                    className={`fixed inset-0 z-40 overflow-y-auto pt-16 ${
                         theme === "dark" ? "bg-white text-green" : "bg-green text-textWhite"
                     }`}
                 >
                     <div className="container mx-auto px-6 py-8 space-y-6">
                         <ul className="list-none space-y-6 text-lg">
                             <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                <Link to="/destinations" onClick={() => setMobileMenuOpen(false)}>Destinations</Link> {/* Replaced <a> with <Link> */}
+                                <Link to="/destinations" onClick={() => setMobileMenuOpen(false)}>Destinations</Link>
                             </li>
                             <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                <Link to="/guides" onClick={() => setMobileMenuOpen(false)}>Guides</Link> {/* Replaced <a> with <Link> */}
+                                <Link to="/guides" onClick={() => setMobileMenuOpen(false)}>Guides</Link>
                             </li>
 
                             {/* Conditional Links for Logged-In User */}
                             {isLoggedIn ? (
                                 <>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <Link to="/tours" onClick={() => setMobileMenuOpen(false)}>My Tours</Link> {/* Replaced <a> with <Link> */}
+                                        <Link to="/mybookings" onClick={() => setMobileMenuOpen(false)}>My Bookings</Link> 
                                     </li>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <Link to="/quizz" onClick={() => setMobileMenuOpen(false)}>Quizzes</Link> {/* Replaced <a> with <Link> */}
+                                        <Link to="/quizz" onClick={() => setMobileMenuOpen(false)}>Quizzes</Link> 
                                     </li>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link> {/* Replaced <a> with <Link> */}
+                                        <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link> 
                                     </li>
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
-                                        <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>Settings</Link> {/* Replaced <a> with <Link> */}
+                                        <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>Settings</Link> 
                                     </li>
                                     <li className="hover:opacity-75 transition-opacity">
                                         <button 
@@ -280,12 +285,10 @@ function NavBar({ theme, toggleTheme, role }) {
                                     <Link 
                                         to="/login" 
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className={`inline-block px-6 py-3 rounded-full ${
-                                            theme === "dark" ? "bg-green text-white" : "bg-white text-green" 
-                                        }`}
+                                        className={`inline-block rounded-full text-green flex items-center`}
                                     >
-                                        Login
-                                    </Link> {/* Replaced <a> with <Link> */}
+                                        <CiLogin className="text-18px mr-1"/>Login
+                                    </Link> 
                                 </li>
                             )}
                         </ul>

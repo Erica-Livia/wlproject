@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 function AdminNav() {
     return (
         <>
-            <div className="font-poppins h-screen space-y-8 pl-8 py-8 w-80 bg-adminbg ">
+            <div className="font-poppins h-screen space-y-8 pl-8 py-8 w-80 bg-adminbg text-white ">
                 <div className="text-24px font-bold pb-4">
                     <a href="/admin-dashboard">Wanderlust Admin</a>
                 </div>
