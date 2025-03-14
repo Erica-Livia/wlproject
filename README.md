@@ -56,3 +56,13 @@ cd wlproject
    npm run dev
    ```
    The app should be accessible at `http://localhost:5173/`.
+
+## 3. Video Demo
+https://youtu.be/Zk1BfmTl8QE
+
+## 4. Link to deployed prototype
+
+https://wanderlust-82d86.web.app/
+
+## 5. MVP Demo Analysis
+For an in-depth analysis of the MVP, including achievements, challenges, and future improvements, refer to the  [MVP Demo Analysis](./Mvp_Demo_Analysis.md).
