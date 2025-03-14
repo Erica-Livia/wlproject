@@ -20,7 +20,24 @@ function DestinationPage({ theme, toggleTheme }) {
     const [filteredDestinations, setFilteredDestinations] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(8);
+    const [itemsPerPage] = useState(12);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    const images = [
+        'url("https://images.unsplash.com/photo-1614046058536-2f0ded689015?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")',
+        'url("https://images.unsplash.com/photo-1672575659699-33e02d8a51a5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")',
+        'url("https://images.unsplash.com/photo-1672576499995-52b950a63142?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")',
+        'url("https://theizytrip.com/wp-content/uploads/2022/10/KAGERA-FALLS.jpg")',
+        'url("https://images.unsplash.com/photo-1672575659057-a2061f9a576b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")'
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+        }, 8000);
+
+        return () => clearInterval(interval);
+    }, [images.length]);
 
     // Fetch destinations and their reviews from Firestore
     useEffect(() => {
@@ -88,43 +105,47 @@ function DestinationPage({ theme, toggleTheme }) {
     const totalPages = Math.ceil(filteredDestinations.length / itemsPerPage);
 
     // Hero carousel settings
-    const heroImages = [
-        "https://images.unsplash.com/photo-1614046058536-2f0ded689015?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-        "https://images.unsplash.com/photo-1672575659699-33e02d8a51a5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-        "https://images.unsplash.com/photo-1672576499995-52b950a63142?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-        "https://images.unsplash.com/photo-1672575659057-a2061f9a576b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    ];
+    // const heroImages = [
+    //     "https://images.unsplash.com/photo-1614046058536-2f0ded689015?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    //     "https://images.unsplash.com/photo-1672575659699-33e02d8a51a5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    //     "https://images.unsplash.com/photo-1672576499995-52b950a63142?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    //     "https://images.unsplash.com/photo-1672575659057-a2061f9a576b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    // ];
 
-    const settings = {
-        dots: true,
-        infinite: false,
-        speed: 800,
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        autoplay: true,
-        autoplaySpeed: 3000,
-    };
+    // const settings = {
+    //     dots: true,
+    //     infinite: false,
+    //     speed: 800,
+    //     slidesToShow: 1,
+    //     slidesToScroll: 1,
+    //     autoplay: true,
+    //     autoplaySpeed: 3000,
+    // };
 
     return (
         <>
             <NavBar theme={theme} toggleTheme={toggleTheme} />
 
             {/* Hero Carousel */}
-            <div className="w-full h-[300px] sm:h-[400px]">
-                <Slider {...settings}>
-                    {heroImages.map((image, index) => (
-                        <div
-                            key={index}
-                            className="relative w-full h-[300px] sm:h-[400px] bg-cover bg-center flex items-center justify-center text-white bg-white"
-                            style={{ backgroundImage: `url(${image})` }}
-                        >
-                            <div className="bg-black bg-opacity-50 p-8 rounded-lg">
-                                <h1 className="text-4xl font-bold">Explore the Wonders of Burundi</h1>
-                                <p className="text-lg mt-2">Discover breathtaking landscapes, cultural gems, and hidden treasures.</p>
-                            </div>
-                        </div>
-                    ))}
-                </Slider>
+            <div className="w-full h-[300px] sm:h-[400px]" style={{
+                backgroundImage: images[currentImageIndex],
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed',
+                transition: 'background-image 1s ease-in-out'
+            }}>
+
+                <div
+
+                    className="relative w-full h-[300px] sm:h-[400px] bg-cover flex items-center justify-center text-white"
+                >
+                    <div className="bg-black bg-opacity-50 p-8 rounded-lg w-full text-center">
+                        <h1 className="text-4xl font-bold">Explore the Wonders of Burundi</h1>
+                        <p className="text-lg mt-2">Discover breathtaking landscapes, cultural gems, and hidden treasures.</p>
+                    </div>
+                </div>
+
+
             </div>
 
             {/* Search and Filters */}
@@ -150,6 +171,9 @@ function DestinationPage({ theme, toggleTheme }) {
                     <option value="Wildlife">Wildlife</option>
                     <option value="Culture">Culture</option>
                     <option value="Beach">Beach</option>
+                    <option value="Religious">Religious</option>
+                    <option value="Visit">Visit</option>
+                    <option value="Nightlife">Nightlife</option>
                 </select>
             </div>
 
@@ -206,11 +230,11 @@ function DestinationPage({ theme, toggleTheme }) {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex bg-white justify-center items-center gap-2 py-6">
+                <div className="flex bg-white justify-center text-white items-center gap-2 py-6">
                     <button
                         onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                        className="px-4 py-2 bg-green rounded-lg hover:bg-gray-400 disabled:opacity-50"
                     >
                         Previous
                     </button>
@@ -220,7 +244,7 @@ function DestinationPage({ theme, toggleTheme }) {
                     <button
                         onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                        className="px-4 py-2 bg-green rounded-lg hover:bg-gray-400 disabled:opacity-50"
                     >
                         Next
                     </button>

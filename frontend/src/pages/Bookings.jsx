@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
 import { collection, query, where, onSnapshot, updateDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { FaHome, FaCreditCard, FaSpinner, FaTimes } from "react-icons/fa";
+import { FaHome, FaCreditCard, FaSpinner } from "react-icons/fa";
 import PaymentForm from "../components/PaymentForm";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -11,6 +13,7 @@ const Bookings = () => {
   const [loading, setLoading] = useState(true);
   const [processingPayment, setProcessingPayment] = useState(null);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [filter, setFilter] = useState("upcoming"); // Filter state: "upcoming", "today", or "past"
   const navigate = useNavigate();
 
   // Set userId once when auth state changes
@@ -24,6 +27,7 @@ const Bookings = () => {
     return () => unsubscribe();
   }, []);
 
+  // Fetch bookings
   useEffect(() => {
     if (!userId) return;
 
@@ -50,6 +54,7 @@ const Bookings = () => {
     return () => unsubscribe();
   }, [userId]);
 
+  // Handle payment completion
   const handlePaymentComplete = async (bookingId) => {
     try {
       setProcessingPayment(bookingId);
@@ -63,22 +68,26 @@ const Bookings = () => {
 
       // Close payment modal
       setSelectedBooking(null);
+      toast.success("Payment successful!");
     } catch (error) {
       console.error("Payment update failed:", error);
-      alert("Payment update failed. Please try again.");
+      toast.error("Payment update failed. Please try again.");
     } finally {
       setProcessingPayment(null);
     }
   };
 
+  // Open payment modal
   const openPaymentModal = (booking) => {
     setSelectedBooking(booking);
   };
 
+  // Close payment modal
   const closePaymentModal = () => {
     setSelectedBooking(null);
   };
 
+  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -89,6 +98,7 @@ const Bookings = () => {
     });
   };
 
+  // Get status color
   const getStatusColor = (status) => {
     switch (status) {
       case "Paid":
@@ -102,16 +112,68 @@ const Bookings = () => {
     }
   };
 
+  // Filter and sort bookings
+  const filteredBookings = bookings
+    .filter((booking) => {
+      const today = new Date().toISOString().split("T")[0];
+      const bookingDate = booking.date.split("T")[0];
+
+      if (filter === "upcoming") {
+        return bookingDate >= today;
+      } else if (filter === "today") {
+        return bookingDate === today;
+      } else if (filter === "past") {
+        return bookingDate < today;
+      }
+      return true;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white min-h-screen">
+      <ToastContainer />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">My Bookings</h1>
         <button
           onClick={() => navigate("/")}
-          className="flex items-center space-x-2 px-4 py-2 bg-khaki text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center space-x-2 px-4 py-2 bg-khaki text-white rounded-lg hover:bg-khaki transition-colors"
         >
           <FaHome />
           <span>Back to Home</span>
+        </button>
+      </div>
+
+      {/* Filter Buttons */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setFilter("upcoming")}
+          className={`px-4 py-2 rounded-lg ${
+            filter === "upcoming"
+              ? "bg-khaki text-white"
+              : "bg-gray-200 text-gray-800"
+          }`}
+        >
+          Upcoming Tours
+        </button>
+        <button
+          onClick={() => setFilter("today")}
+          className={`px-4 py-2 rounded-lg ${
+            filter === "today"
+              ? "bg-khaki text-white"
+              : "bg-gray-200 text-gray-800"
+          }`}
+        >
+          Today's Tours
+        </button>
+        <button
+          onClick={() => setFilter("past")}
+          className={`px-4 py-2 rounded-lg ${
+            filter === "past"
+              ? "bg-khaki text-white"
+              : "bg-gray-200 text-gray-800"
+          }`}
+        >
+          Past Tours
         </button>
       </div>
 
@@ -124,80 +186,79 @@ const Bookings = () => {
           <p className="text-gray-600 text-lg">You don't have any bookings yet.</p>
           <button
             onClick={() => navigate("/destinations")}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="mt-4 px-6 py-2 bg-khaki text-white rounded-lg hover:bg-khaki transition-colors"
           >
             Explore Destinations
           </button>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-6">
-          {bookings.map((booking) => (
-            <div
-              key={booking.id}
-              className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-            >
-              <div className="bg-gray-50 px-6 py-4 border-b">
-                <h3 className="text-lg font-semibold">{booking.destination}</h3>
-                <p className="text-sm text-gray-500">
-                  Booking ID: {booking.id.substring(0, 8)}...
-                </p>
-              </div>
-
-              <div className="p-6 space-y-3 bg-textWhite">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Date:</span>
-                  <span className="font-medium">{formatDate(booking.date)}</span>
-                </div>
-
-                {booking.guests && (
-                  <div className="flex justify-between bg-textWhite">
-                    <span className="text-gray-600">Guests:</span>
-                    <span className="font-medium">{booking.guests}</span>
-                  </div>
-                )}
-
-                {booking.price && (
-                  <div className="flex justify-between bg-textWhite">
-                    <span className="text-gray-600">Price:</span>
-                    <span className="font-medium">${booking.price}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Status:</span>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                      booking.status
-                    )}`}
-                  >
-                    {booking.status}
-                  </span>
-                </div>
-              </div>
-
-              {booking.status !== "Paid" && (
-                <div className="px-6 py-4 bg-gray-50 border-t">
-                  <button
-                    onClick={() => openPaymentModal(booking)}
-                    disabled={processingPayment === booking.id}
-                    className="w-full flex items-center justify-center space-x-2 bg-khaki text-white py-2 px-4 rounded-md transition-colors disabled:bg-green-400"
-                  >
-                    {processingPayment === booking.id ? (
-                      <>
-                        <FaSpinner className="animate-spin" />
-                        <span>Processing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FaCreditCard />
-                        <span>Pay Now</span>
-                      </>
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Destination
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Guide
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredBookings.map((booking) => (
+                <tr key={booking.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {formatDate(booking.date)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {booking.destination}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {booking.guideName || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                        booking.status
+                      )}`}
+                    >
+                      {booking.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {booking.status !== "Paid" && (
+                      <button
+                        onClick={() => openPaymentModal(booking)}
+                        disabled={processingPayment === booking.id}
+                        className="flex items-center space-x-2 bg-khaki text-white py-2 px-4 rounded-md transition-colors disabled:bg-green-400"
+                      >
+                        {processingPayment === booking.id ? (
+                          <>
+                            <FaSpinner className="animate-spin" />
+                            <span>Processing...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FaCreditCard />
+                            <span>Pay Now</span>
+                          </>
+                        )}
+                      </button>
                     )}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

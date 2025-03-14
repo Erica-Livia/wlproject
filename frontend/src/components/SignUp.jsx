@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, User } from 'lucide-react';
 import { auth } from '../firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
+import { doc, setDoc, getFirestore } from 'firebase/firestore';
 import axios from 'axios';
 
 function SignUp() {
@@ -16,7 +17,9 @@ function SignUp() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const navigate = useNavigate();
+  const db = getFirestore();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -26,7 +29,17 @@ function SignUp() {
     }));
   };
 
+  // Validate email format
+  const validateEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const validateForm = () => {
+    if (!validateEmail(formData.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return false;
@@ -41,38 +54,54 @@ function SignUp() {
   const handleEmailSignUp = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-  
+
     setIsLoading(true);
     setError('');
-  
+
     try {
       console.log('Starting signup process...', formData);
-  
-      // First, create user in Firebase
+
+      // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
       console.log('Firebase auth success:', userCredential);
-  
+
       // Update profile with full name
       await updateProfile(userCredential.user, {
         displayName: `${formData.firstName} ${formData.lastName}`
       });
       console.log('Profile updated');
-  
+
+      // Send email verification
+      await sendEmailVerification(userCredential.user);
+      console.log('Email verification sent');
+
+      // Save user data to Firestore
+      const userId = userCredential.user.uid;
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        role: formData.role,
+        createdAt: new Date()
+      };
+      
+      await setDoc(doc(db, 'users', userId), userData);
+      console.log('User data saved to Firestore');
+
       // Store user information in localStorage
-      localStorage.setItem('userId', userCredential.user.uid);
+      localStorage.setItem('userId', userId);
       localStorage.setItem('userEmail', formData.email);
       localStorage.setItem('userRole', formData.role);
       localStorage.setItem('isLoggedIn', 'true');
-  
-      // Navigate to login or dashboard based on role
+
+      // Show guide verification modal if role is "guide"
       if (formData.role === 'guide') {
-        navigate('/guide-dashboard');
-      } else if (formData.role === 'admin') {
-        navigate('/admin-dashboard');
+        setShowGuideModal(true);
       } else {
         navigate('/');
       }
@@ -83,7 +112,6 @@ function SignUp() {
       setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="min-h-screen flex items-center font-poppins justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
@@ -210,33 +238,34 @@ function SignUp() {
           </div>
         </form>
 
-        {/* Divider */}
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+        {/* Guide Verification Modal */}
+        {showGuideModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg max-w-md w-full">
+              <h3 className="text-lg font-bold mb-4">Guide Verification Required</h3>
+              <p className="mb-4">
+                To become a guide, you need to verify your identity. Please fill out the form below:
+              </p>
+              <a
+                href="YOUR_GOOGLE_FORM_URL" // Replace with your Google Form URL
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              >
+                Open Verification Form
+              </a>
+              <button
+                onClick={() => {
+                  setShowGuideModal(false);
+                  navigate('/');
+                }}
+                className="mt-4 w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+              >
+                Close
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Google Sign Up */}
-        <div>
-          <button
-            // onClick={handleGoogleSignUp}
-            disabled={isLoading}
-            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <img
-              className="h-5 w-5 mr-2"
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              alt="Google logo"
-            />
-            Sign up with Google
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

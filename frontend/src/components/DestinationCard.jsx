@@ -34,13 +34,13 @@ function DestinationCard({ theme, destination }) {
                 </h3>
 
                 {/* Short Description */}
-                <h4 className="text-sm text-gray-600 mt-2 overflow-hidden">
+                {/* <h4 className="text-sm text-gray-600 mt-2 overflow-hidden">
                     {destination.description
                         ? destination.description.length > 50
-                            ? `${destination.description.substring(0, 50)}...` // Limit to 100 characters
+                            ? `${destination.description.substring(0, 50)}...` // Limit to 50 characters
                             : destination.description
-                        : "A short description of the destination goes here."}
-                </h4>
+                        : ""}
+                </h4> */}
 
                 {/* Category */}
                 <p className="text-gray-500 text-sm mt-2">

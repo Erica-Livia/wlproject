@@ -23,6 +23,7 @@ import GuideBookingPage from "./pages/GuideBookingPage";
 import GuideReviewsList from "./pages/guideview/GuideReviewsList";
 import GuideInbox from "./pages/guideview/GuideInbox";
 import Bookings from "./pages/Bookings";
+import UserProfileSetting from "./pages/UserProfile";
 
 
 
@@ -72,6 +73,7 @@ function App() {
           <Route path="/destinations" element={<DestinationPage theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/guides" element={<GuidesPage theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/guide-profile-setting" element={<GuideProfileSetting theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/profile" element={<UserProfileSetting theme={theme} toggleTheme={toggleTheme} />} />          
           <Route path="/destination-details/:id" element={<DestinationDetailsPage theme={theme} toggleTheme={toggleTheme}/>} />
           <Route path="/guide-details/:guideId" element={<GuideDetailsPage theme={theme} toggleTheme={toggleTheme}/>} />
           

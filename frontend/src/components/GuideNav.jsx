@@ -5,7 +5,7 @@ import { PiUserCircleCheck } from "react-icons/pi";
 import { BsCalendar4Week } from "react-icons/bs";
 import { PiUserBold } from "react-icons/pi";
 import { FiChevronDown, FiChevronUp, FiLogOut } from "react-icons/fi";
-import { MdSettings, MdInbox } from "react-icons/md";
+import { MdSettings, MdOutlineAttachMoney } from "react-icons/md";
 import { signOut } from 'firebase/auth';
 import { Link } from "react-router-dom";
 import { auth } from "../firebase";
@@ -69,10 +69,10 @@ function GuideNav({ theme }) {
                             </Link>
                         </li>
 
-                        {/* Inbox */}
+                        {/* Bookings */}
                         <li>
-                            <Link to="/guide-inbox" className="flex items-center">
-                                <MdInbox className="text-24px mr-2" /> Inbox
+                            <Link to="/guide-bookings" className="flex items-center">
+                                <BsCalendar4Week className="text-24px mr-2" /> Bookings
                             </Link>
                         </li>
 
@@ -80,6 +80,13 @@ function GuideNav({ theme }) {
                         <li>
                             <Link to="/guide-reviews" className="flex items-center">
                                 <FaStarHalfStroke className="text-24px mr-2" /> Reviews
+                            </Link>
+                        </li>
+
+                        {/* Earnings */}
+                        <li>
+                            <Link to="/guide-earnings" className="flex items-center">
+                                <MdOutlineAttachMoney className="text-24px mr-2" /> Earnings
                             </Link>
                         </li>
 

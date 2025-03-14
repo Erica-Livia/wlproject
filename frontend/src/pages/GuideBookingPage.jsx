@@ -5,6 +5,7 @@ import { db, auth } from "../firebase";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { LuDot } from "react-icons/lu";
+import { FaClock, FaUser, FaMapMarkerAlt } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { PulseLoader } from "react-spinners";
@@ -14,6 +15,7 @@ function GuideBookingPage() {
   const [guide, setGuide] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState("");
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
   const navigate = useNavigate();
@@ -25,27 +27,96 @@ function GuideBookingPage() {
         const guideDoc = await getDoc(doc(db, "guides", guideId));
         if (guideDoc.exists()) {
           const guideData = guideDoc.data();
-          if (!guideData.availability || typeof guideData.availability !== "object") {
-            guideData.availability = {};
+          // Ensure availability is an array
+          if (!guideData.availability || !Array.isArray(guideData.availability)) {
+            guideData.availability = [];
           }
           setGuide(guideData);
+          generateAvailableSlotsForDate(selectedDate, guideData.availability);
         } else {
           toast.error("Guide not found");
+          navigate("/"); // Redirect if guide not found
         }
       } catch (error) {
         toast.error("Error fetching guide details");
+        console.error("Error fetching guide:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchGuide();
-  }, [guideId]);
+  }, [guideId, navigate]);
+
+  // Generate 1-hour time slots from the guide's availability
+  const generateTimeSlots = (startTime, endTime) => {
+    const slots = [];
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+
+    let current = new Date(start);
+    while (current < end) {
+      const timeString = current.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      const nextHour = new Date(current);
+      nextHour.setHours(current.getHours() + 1);
+
+      // If next hour exceeds end time, don't add this slot
+      if (nextHour <= end) {
+        const endTimeString = nextHour.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        slots.push(`${timeString} - ${endTimeString}`);
+      }
+
+      current.setHours(current.getHours() + 1);
+    }
+
+    return slots;
+  };
+
+  // Get available slots for a given date based on guide's weekly schedule
+  const generateAvailableSlotsForDate = (date, availability) => {
+    if (!availability || !Array.isArray(availability)) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayName = dayNames[date.getDay()];
+
+    // Check for existing bookings (This would need to be implemented to block already booked slots)
+    const dateKey = date.toISOString().split("T")[0];
+    const existingBookings = guide?.bookedSlots?.[dateKey] || [];
+
+    // Find matching day in availability
+    const daySchedule = availability.find(schedule => schedule.day === dayName);
+
+    if (daySchedule) {
+      // Generate 1-hour slots
+      const slots = generateTimeSlots(daySchedule.startTime, daySchedule.endTime);
+
+      // Filter out already booked slots
+      const availableSlots = slots.filter(slot => !existingBookings.includes(slot));
+
+      setAvailableTimeSlots(availableSlots);
+    } else {
+      setAvailableTimeSlots([]);
+    }
+  };
 
   // Handle date selection
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    setSelectedSlot("");
+    setSelectedSlot(""); // Reset selected slot when date changes
+    generateAvailableSlotsForDate(date, guide?.availability);
   };
 
   // Handle slot selection
@@ -55,6 +126,12 @@ function GuideBookingPage() {
 
   // Handle booking
   const handleBooking = async () => {
+    if (!auth.currentUser) {
+      toast.warn("Please log in to book a guide.");
+      navigate("/login"); // Redirect to login page
+      return;
+    }
+
     if (!selectedSlot) {
       toast.warn("Please select a time slot.");
       return;
@@ -62,38 +139,84 @@ function GuideBookingPage() {
 
     setIsBooking(true);
     try {
+      const dateKey = selectedDate.toISOString().split("T")[0];
+
       const booking = {
-        userId: auth.currentUser?.uid,
-        userName: auth.currentUser?.displayName || "Anonymous",
+        userId: auth.currentUser.uid,
+        userName: auth.currentUser.displayName || "Anonymous",
+        userEmail: auth.currentUser.email,
         guideId,
-        date: selectedDate.toISOString().split("T")[0],
+        guideName: guide.name,
+        date: dateKey,
         time: selectedSlot,
         status: "pending",
+        createdAt: new Date().toISOString(),
       };
 
       // Add booking to Firestore
       await addDoc(collection(db, "bookings"), booking);
 
-      // Update guide's availability
-      const updatedAvailability = { ...guide.availability };
-      const dateKey = selectedDate.toISOString().split("T")[0];
-      if (updatedAvailability[dateKey]) {
-        updatedAvailability[dateKey] = updatedAvailability[dateKey].filter(
-          (slot) => slot !== selectedSlot
-        );
+      // Update guide's booked slots
+      const updatedBookedSlots = { ...(guide.bookedSlots || {}) };
+
+      if (!updatedBookedSlots[dateKey]) {
+        updatedBookedSlots[dateKey] = [];
       }
 
+      updatedBookedSlots[dateKey].push(selectedSlot);
+
       await updateDoc(doc(db, "guides", guideId), {
-        availability: updatedAvailability,
+        bookedSlots: updatedBookedSlots,
       });
 
       toast.success("Booking successful!");
       setTimeout(() => navigate("/mybookings"), 2000); // Redirect after 2 seconds
     } catch (error) {
       toast.error("Failed to book. Please try again.");
+      console.error("Booking error:", error);
     } finally {
       setIsBooking(false);
     }
+  };
+
+  // Check if a date has available slots
+  const hasAvailableSlots = (date) => {
+    if (!guide?.availability || !Array.isArray(guide.availability)) return false;
+
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayName = dayNames[date.getDay()];
+
+    return guide.availability.some(schedule => schedule.day === dayName);
+  };
+
+  // Custom tile content for the calendar
+  const tileContent = ({ date, view }) => {
+    if (view === "month" && hasAvailableSlots(date)) {
+      return (
+        <div className="flex justify-center text-center">
+          <LuDot className="text-blue-500" size={24} />
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tile class for the calendar
+  const tileClassName = ({ date, view }) => {
+    if (view === "month") {
+      // Highlight dates with available slots
+      if (hasAvailableSlots(date)) {
+        return "available-date";
+      }
+
+      // Disable dates in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date < today) {
+        return "past-date";
+      }
+    }
+    return null;
   };
 
   // Handle cancel
@@ -105,26 +228,6 @@ function GuideBookingPage() {
       navigate("/"); // Navigate to the homepage
     }
   };
-
-  // Custom tile content for the calendar
-  const tileContent = ({ date, view }) => {
-    if (view === "month") {
-      const dateKey = date.toISOString().split("T")[0];
-      const slots = guide?.availability[dateKey] || [];
-      if (slots.length > 0) {
-        return (
-          <div className="flex justify-center text-center">
-            <LuDot className="text-blue-500" />
-          </div>
-        );
-      }
-    }
-    return null;
-  };
-
-  // Get available slots for the selected date
-  const dateKey = selectedDate.toISOString().split("T")[0];
-  const availableSlots = guide?.availability[dateKey] || [];
 
   if (loading) {
     return (
@@ -139,61 +242,152 @@ function GuideBookingPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
       <ToastContainer />
-      <h1 className="text-3xl font-bold mb-8 text-center">Book {guide.name}</h1>
 
-      {/* Calendar */}
-      <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
-        <Calendar
-          onChange={handleDateChange}
-          value={selectedDate}
-          tileContent={tileContent}
-          minDate={new Date()} // Disable past dates
-          className="react-calendar"
-        />
-      </div>
+      {/* Guide Info Header */}
+      <div className="mb-8 bg-white p-6 rounded-lg shadow-md flex flex-col md:flex-row items-center gap-6">
+        <div className="md:w-1/4">
+          {guide.profilePictureUrl ? (
+            <img
+              src={guide.profilePictureUrl}
+              alt={guide.name}
+              className="w-40 h-40 rounded-full object-cover mx-auto border-4 border-blue-100"
+            />
+          ) : (
+            <div className="w-40 h-40 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+              <FaUser size={50} className="text-green" />
+            </div>
+          )}
+        </div>
 
-      {/* Available Slots */}
-      <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Available Slots</h2>
-        {availableSlots.length === 0 ? (
-          <p className="text-gray-500">No slots available for this date.</p>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {availableSlots.map((slot) => (
-              <button
-                key={slot}
-                onClick={() => handleSlotSelection(slot)}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  selectedSlot === slot
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-800 hover:bg-blue-100"
-                }`}
-              >
-                {slot}
-              </button>
-            ))}
+        <div className="md:w-3/4 text-center md:text-left">
+          <h1 className="text-3xl font-bold mb-2">{guide.name}</h1>
+          <div className="flex items-center justify-center md:justify-start mb-2">
+            <FaMapMarkerAlt className="text-red-500 mr-2" />
+            <span>{guide.guideAddress || "Location not specified"}</span>
           </div>
-        )}
+          <div className="flex items-center justify-center md:justify-start mb-4">
+            <FaClock className="text-blue-500 mr-2" />
+            <span>Available {guide.availability?.length || 0} days a week</span>
+          </div>
+          <p className="text-gray-700">{guide.bio || "No biography available."}</p>
+        </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={handleCancel}
-          className="bg-gray-300 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-400 transition-all"
-        >
-          Back to Home
-        </button>
-        <button
-          onClick={handleBooking}
-          disabled={isBooking || !selectedSlot}
-          className="bg-blue-500 text-white px-8 py-3 rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isBooking ? "Booking..." : "Book Now"}
-        </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Calendar */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Select a Date</h2>
+          <Calendar
+            onChange={handleDateChange}
+            value={selectedDate}
+            tileContent={tileContent}
+            tileClassName={tileClassName}
+            minDate={new Date()} 
+            className="react-calendar mx-auto"
+          />
+          <div className="mt-4 flex items-center justify-center">
+            <div className="flex items-center mr-4">
+              <div className="w-4 h-4 rounded-full bg-khaki mr-2"></div>
+              <span className="text-sm">Available</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-4 h-4 rounded-full bg-gray-300 mr-2"></div>
+              <span className="text-sm">Unavailable</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Available Slots */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">
+            Available Times for {selectedDate.toLocaleDateString()}
+          </h2>
+          {availableTimeSlots.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-2">No slots available for this date.</p>
+              <p className="text-sm text-gray-400">Please select another date from the calendar.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {availableTimeSlots.map((slot) => (
+                <button
+                  key={slot}
+                  onClick={() => handleSlotSelection(slot)}
+                  className={`px-4 py-3 rounded-lg transition-all flex items-center justify-center ${selectedSlot === slot
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-800 hover:bg-blue-100"
+                    }`}
+                >
+                  <FaClock className="mr-2" size={14} />
+                  {slot}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Booking Summary */}
+          {selectedSlot && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="font-semibold text-lg mb-2">Booking Summary</h3>
+              <p className="mb-1"><strong>Guide:</strong> {guide.name}</p>
+              <p className="mb-1"><strong>Date:</strong> {selectedDate.toLocaleDateString()}</p>
+              <p className="mb-1"><strong>Time:</strong> {selectedSlot}</p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-between gap-4 mt-6">
+            <button
+              onClick={handleCancel}
+              className="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-400 transition-all flex-1"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBooking}
+              disabled={isBooking || !selectedSlot}
+              className="bg-khaki text-white px-6 py-3 rounded-lg hover:bg-green transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+            >
+              {isBooking ? "Booking..." : "Book Now"}
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Custom styles */}
+      <style jsx>{`
+        .react-calendar {
+          border: none;
+          width: 100%;
+        }
+        
+        .react-calendar__tile {
+          padding: 14px 6px;
+        }
+        
+        .react-calendar__tile--active {
+          background: #666048;
+          color: white;
+        }
+
+        .react-calendar__tile--active:hover {
+          background: #283226;
+        }
+        
+        .react-calendar__tile.available-date:not(.react-calendar__tile--active) {
+          background-color: #EFF6FF;
+          color: #4C4A36;
+          position: relative;
+        }
+        
+        .react-calendar__tile.past-date {
+          background-color: #F3F4F6;
+          color: #9CA3AF;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 }

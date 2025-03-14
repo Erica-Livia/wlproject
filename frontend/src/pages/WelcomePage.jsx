@@ -133,6 +133,10 @@ function WelcomePage({ theme, toggleTheme }) {
                     </div>
                 </div>
 
+                {/* Why choose our guides */}
+
+                
+
                 {/* WHY CHOOSE WANDERLUST */}
                 <div className="py-16 px-4 sm:px-6 lg:px-8 bg-opacity-5" style={{
                     background: theme === "dark" ? "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(240,240,240,1) 100%)" : "linear-gradient(180deg, rgba(0,128,0,1) 0%, rgba(0,100,0,1) 100%)"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
 import { FaStar, FaRegStar, FaChevronLeft } from "react-icons/fa";
 import NavBar from "../components/NavBar";
@@ -9,6 +9,8 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import LoginPage from "./LoginPage";
 import StartChat from "../components/StartChat";
+import { CiEdit } from "react-icons/ci";
+import { IoTrashBinOutline } from "react-icons/io5";
 
 function DestinationDetailsPage({ theme, toggleTheme }) {
     const { id } = useParams();
@@ -21,6 +23,10 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
     const [reviewTitle, setReviewTitle] = useState("");
     const [reviewDescription, setReviewDescription] = useState("");
     const [reviewRating, setReviewRating] = useState(0);
+    const [editingReview, setEditingReview] = useState(null);
+    const [editReviewTitle, setEditReviewTitle] = useState("");
+    const [editReviewDescription, setEditReviewDescription] = useState("");
+    const [editReviewRating, setEditReviewRating] = useState(0);
     const [guides, setGuides] = useState([]);
     const user = auth.currentUser;
 
@@ -47,7 +53,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                 setReviews(fetchedReviews);
 
                 // Fetch affiliated guides
-                const guidesQuery = query(collection(db, "guides"), where("destinationId", "==", id));
+                const guidesQuery = query(collection(db, "guides"), where("affiliatedDestinations", "array-contains", id));
                 const guidesSnapshot = await getDocs(guidesQuery);
                 const fetchedGuides = guidesSnapshot.docs.map((doc) => ({
                     id: doc.id,
@@ -104,6 +110,86 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
             alert("Review submitted!");
         } catch (error) {
             console.error("Error submitting review:", error);
+        }
+    };
+
+    const handleEditReview = (review) => {
+        setEditingReview(review);
+        setEditReviewTitle(review.title);
+        setEditReviewDescription(review.description);
+        setEditReviewRating(review.rating);
+    };
+
+    const handleUpdateReview = async () => {
+        if (!editReviewTitle || !editReviewDescription || editReviewRating === 0) {
+            alert("Please fill out all fields and provide a rating.");
+            return;
+        }
+
+        try {
+            const reviewRef = doc(db, "reviews", editingReview.id);
+            await updateDoc(reviewRef, {
+                title: editReviewTitle,
+                description: editReviewDescription,
+                rating: editReviewRating,
+                timestamp: serverTimestamp(),
+            });
+
+            // Refresh reviews
+            const reviewsQuery = query(collection(db, "reviews"), where("destinationId", "==", id));
+            const reviewsSnapshot = await getDocs(reviewsQuery);
+            const fetchedReviews = reviewsSnapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setReviews(fetchedReviews);
+
+            // Reset editing state
+            setEditingReview(null);
+            alert("Review updated successfully!");
+        } catch (error) {
+            console.error("Error updating review:", error);
+        }
+    };
+
+    const handleDeleteReview = async (reviewId) => {
+        if (window.confirm("Are you sure you want to delete this review?")) {
+            try {
+                await deleteDoc(doc(db, "reviews", reviewId));
+
+                // Refresh reviews
+                const reviewsQuery = query(collection(db, "reviews"), where("destinationId", "==", id));
+                const reviewsSnapshot = await getDocs(reviewsQuery);
+                const fetchedReviews = reviewsSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setReviews(fetchedReviews);
+
+                alert("Review deleted successfully!");
+            } catch (error) {
+                console.error("Error deleting review:", error);
+            }
+        }
+    };
+
+    const handleReportReview = async (reviewId) => {
+        if (!user) {
+            setShowLoginModal(true);
+            return;
+        }
+
+        try {
+            // Add the reported review to the "reportedReviews" collection
+            await addDoc(collection(db, "reportedReviews"), {
+                reviewId,
+                reportedBy: user.uid,
+                timestamp: serverTimestamp(),
+            });
+
+            alert("Review reported successfully. An admin will review it.");
+        } catch (error) {
+            console.error("Error reporting review:", error);
         }
     };
 
@@ -248,7 +334,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                                     <p className="text-center text-sm text-gray-600">{guide.category}</p>
                                     <button
                                         onClick={() => navigate(`/book-guide/${guide.id}`)}
-                                        className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                                        className="mt-4 w-full bg-khaki text-white px-4 py-2 rounded-lg hover:bg-green"
                                     >
                                         Book Now
                                     </button>
@@ -259,7 +345,14 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
 
                     {/* Combined Rating and Reviews Section */}
                     <div className="mt-6">
-                        <h3 className="text-lg font-semibold">Average Rating: {averageRating}</h3>
+                        <h3 className="text-lg font-semibold mb-8">Average Rating: {averageRating}⭐</h3>
+                        <h4>Want to share an experience from this destination? Leave a review bellow!</h4>
+                        <button
+                            onClick={() => (user ? setShowReviewForm(true) : setShowLoginModal(true))}
+                            className="mt-4 bg-khaki text-white px-4 py-2 rounded-lg hover:bg-green transition"
+                        >
+                            Leave a Review
+                        </button>
                         <div className="mt-4">
                             {reviews.length === 0 ? (
                                 <p className="text-gray-500">No reviews yet. Be the first to write one!</p>
@@ -279,16 +372,28 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                                         <p className="text-sm text-gray-500 mt-2">
                                             By {review.userName} • {new Date(review.timestamp?.toDate()).toLocaleDateString()}
                                         </p>
+                                        {/* Edit and Delete Buttons */}
+                                        {user && review.userId === user.uid && (
+                                            <div className="flex gap-2 mt-4">
+                                                <button
+                                                    onClick={() => handleEditReview(review)}
+                                                    className="bg-textWhite text-black px-2 py-1 text-24px rounded-lg hover:bg-khaki hover:text-white"
+                                                >
+                                                    <CiEdit />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteReview(review.id)}
+                                                    className="bg-textThite text-red-600  text-24px px-2 py-1 rounded-lg hover:bg-red-400 hover:text-white"
+                                                >
+                                                    <IoTrashBinOutline />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 ))
                             )}
                         </div>
-                        <button
-                            onClick={() => (user ? setShowReviewForm(true) : setShowLoginModal(true))}
-                            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
-                        >
-                            Write a Review
-                        </button>
+                        
                     </div>
 
                     {/* Review Form Modal */}
@@ -338,6 +443,62 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                             </div>
                         </div>
                     )}
+
+                    {editingReview && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                                <h3 className="text-lg font-semibold mb-4">Edit Review</h3>
+                                <input
+                                    type="text"
+                                    placeholder="Title"
+                                    value={editReviewTitle}
+                                    onChange={(e) => setEditReviewTitle(e.target.value)}
+                                    className="w-full p-2 border rounded-lg mb-4"
+                                />
+                                <textarea
+                                    placeholder="Description"
+                                    value={editReviewDescription}
+                                    onChange={(e) => setEditReviewDescription(e.target.value)}
+                                    className="w-full p-2 border rounded-lg mb-4"
+                                    rows="4"
+                                />
+                                <div className="flex gap-2 mb-4">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            onClick={() => setEditReviewRating(star)}
+                                            className={`text-${star <= editReviewRating ? "yellow" : "gray"}-400 text-xl`}
+                                        >
+                                            <FaStar />
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        onClick={() => setEditingReview(null)}
+                                        className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleUpdateReview}
+                                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                                    >
+                                        Update
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* {user && reviews.userId !== user.uid && (
+                        <button
+                            onClick={() => handleReportReview(reviews.id)}
+                            className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600"
+                        >
+                            Report
+                        </button>
+                    )} */}
                 </div>
             </div>
 
