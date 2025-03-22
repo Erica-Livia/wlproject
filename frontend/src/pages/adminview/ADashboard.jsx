@@ -16,123 +16,135 @@ const StatCard = ({ title, count, icon: Icon, color = "bg-blue-500" }) => (
     </div>
     <p className="text-3xl font-bold text-gray-900">{count}</p>
     <p className="text-green-500 text-sm mt-2 flex items-center">
-      <TrendingUp size={14} className="mr-1" />
-      <span>+10% from last month</span>
     </p>
   </div>
 );
 
 const AdminDashboard = () => {
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
-        users: 0,
-        guides: 0,
-        reports: 0,
-        destinations: 0,
-    });
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    visitors: 0,
+    guides: 0,
+    totalGuides: 0,
+    reports: 0,
+    destinations: 0,
+  });
+  const [topDestination, setTopDestination] = useState(null);
+  const [topGuide, setTopGuide] = useState(null);
 
-    const navigate = useNavigate();
-    const db = getFirestore();
+  const navigate = useNavigate();
+  const db = getFirestore();
 
-    useEffect(() => {
-        const checkAdmin = async () => {
-            const user = auth.currentUser;
-            if (!user) {
-                navigate("/login");
-                return;
-            }
+  useEffect(() => {
+    const checkAdmin = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+    
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userData = userDoc.data();
+    
+      if (!userData || userData.role !== "admin") {
+        navigate("/");
+        return;
+      }
 
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            const userData = userDoc.data();
+      await fetchStats();
+      setLoading(false);
+    };
 
-            if (!userData || userData.role !== "admin") {
-                navigate("/");
-                return;
-            }
+    const fetchStats = async () => {
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const guidesSnapshot = await getDocs(collection(db, "guides"));
+        // const reviewSnapshot = await getDoc(collection(db, "guideReview"));
+        const reportsSnapshot = await getDocs(collection(db, "reports"));
+        const destinationsSnapshot = await getDocs(collection(db, "destinations"));
 
-            // Fetch statistics
-            await fetchStats();
-            setLoading(false);
-        };
+        const visitors = usersSnapshot.docs.filter(doc => doc.data().role === "user").length;
+        const guides = usersSnapshot.docs.filter(doc => doc.data().role === "guide").length;
 
-        const fetchStats = async () => {
-            try {
-                const usersSnapshot = await getDocs(collection(db, "users"));
-                const guidesSnapshot = await getDocs(collection(db, "guides"));
-                const reportsSnapshot = await getDocs(collection(db, "reports"));
-                const destinationsSnapshot = await getDocs(collection(db, "destinations"));
+        setStats({
+          visitors,
+          guides,
+          totalGuides: guidesSnapshot.size,
+          reports: reportsSnapshot.size,
+          destinations: destinationsSnapshot.size,
+        });
 
-                setStats({
-                    users: usersSnapshot.size,
-                    guides: guidesSnapshot.size,
-                    reports: reportsSnapshot.size,
-                    destinations: destinationsSnapshot.size,
-                });
-            } catch (error) {
-                console.error("Error fetching statistics:", error);
-            }
-        };
+        const destinations = destinationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const sortedDestinations = destinations.sort((a, b) => b.rating - a.rating);
+        setTopDestination(sortedDestinations[0]);
 
-        checkAdmin();
-    }, [navigate, db]);
+        const guidesData = guidesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const sortedGuides = guidesData.sort((a, b) => b.rating - a.rating);
+        setTopGuide(sortedGuides[0]);
+      } catch (error) {
+        console.error("Error fetching statistics:", error);
+      }
+    };
 
-    if (loading) return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-lg text-gray-600">Loading dashboard...</p>
+    checkAdmin();
+  }, [navigate, db]);
+
+  if (loading) return (
+    <div className="flex flex-row bg-gray-50 min-h-screen">
+      <div className="">
+        <AdminNav />
       </div>
-    );
+      <p className="text-lg text-gray-600 p-6 ml-64 w-full">Loading dashboard...</p>
+    </div>
+  );
 
-    return (
-        <div className="flex flex-row bg-gray-50 min-h-screen">
-            {/* Left Sidebar - Admin Navigation */}
-            <div className="w-1/4">
-                <AdminNav />
-            </div>
+  return (
+    <div className="flex flex-row bg-gray-50 min-h-screen">
+      <div className="">
+        <AdminNav />
+      </div>
 
-            {/* Right Side - Dashboard Stats */}
-            <div className="p-6 ml-64 w-full"> 
-                <div className="max-w-7xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-2 text-gray-800">Admin Dashboard</h1>
-                    <p className="text-gray-500 mb-8">Welcome to your admin control panel</p>
+      <div className="p-6 w-full">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold mb-2 text-gray-800">Admin Dashboard</h1>
+          <p className="text-gray-500 mb-8">Welcome to your admin control panel</p>
 
-                    {/* Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Card 1: Total Users */}
-                        <StatCard 
-                          title="Total Users" 
-                          count={stats.users} 
-                          icon={Users}
-                          color="bg-blue-500"
-                        />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard title="Visitors" count={stats.visitors} icon={Users} color="bg-blue-500" />
+            <StatCard title="Guides" count={stats.guides} icon={Users} color="bg-purple-500" />
+            <StatCard title="Reports" count={stats.reports} icon={Flag} color="bg-red-500" />
+            <StatCard title="Destinations" count={stats.destinations} icon={MapPin} color="bg-green-500" />
+          </div>
 
-                        {/* Card 2: Total Guides */}
-                        <StatCard 
-                          title="Total Guides" 
-                          count={stats.guides} 
-                          icon={BookOpen}
-                          color="bg-purple-500"
-                        />
-
-                        {/* Card 3: Total Reports */}
-                        <StatCard 
-                          title="Total Reports" 
-                          count={stats.reports} 
-                          icon={Flag}
-                          color="bg-red-500"
-                        />
-
-                        {/* Card 4: Total Destinations */}
-                        <StatCard 
-                          title="Total Destinations" 
-                          count={stats.destinations} 
-                          icon={MapPin}
-                          color="bg-green-500"
-                        />
-                    </div>
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">Top Destination</h2>
+              {topDestination ? (
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{topDestination.title}</p>
+                  <p className="text-gray-500">Rating: {topDestination.rating}</p>
                 </div>
+              ) : (
+                <p className="text-gray-500">No data available</p>
+              )}
             </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">Top Guide</h2>
+              {topGuide ? (
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{topGuide.name}</p>
+                  <p className="text-gray-500">Rating: {topGuide.averageRating}</p>
+                </div>
+              ) : (
+                <p className="text-gray-500">No data available</p>
+              )}
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default AdminDashboard;

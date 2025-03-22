@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../../firebase";
-import { getFirestore, doc, getDoc, collection, getDocs, deleteDoc, updateDoc, query, orderBy } from "firebase/firestore";
+import { auth, db } from "../../firebase";
+import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
 import AdminNav from "../../components/AdminNav";
-import { MapPin, Edit, Trash2, Search, Plus, Star, Globe, Filter, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Star, Download, MapPin, Users, Map, ArrowUp, ArrowDown } from "lucide-react"; // Added sorting icons
+import { saveAs } from "file-saver"; // For exporting CSV
 
 const DestinationsList = () => {
     const [loading, setLoading] = useState(true);
     const [destinations, setDestinations] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedContinent, setSelectedContinent] = useState("all");
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [destinationToDelete, setDestinationToDelete] = useState(null);
-    const [sortField, setSortField] = useState("name");
-    const [sortDirection, setSortDirection] = useState("asc");
+    const [selectedRating, setSelectedRating] = useState("all");
+    const [showAllDestinations, setShowAllDestinations] = useState(false);
+    const [sortCriteria, setSortCriteria] = useState("name"); // Sorting criteria: "name" or "rating"
+    const [sortOrder, setSortOrder] = useState("asc"); // Sorting order: "asc" or "desc"
 
     const navigate = useNavigate();
     const db = getFirestore();
@@ -21,148 +21,148 @@ const DestinationsList = () => {
     useEffect(() => {
         const checkAdmin = async () => {
             const user = auth.currentUser;
-            // if (!user) {
-            //     navigate("/login");
-            //     return;
-            // }
-
+            if (!user) {
+              navigate("/login");
+              return;
+            }
+          
             const userDoc = await getDoc(doc(db, "users", user.uid));
             const userData = userDoc.data();
-
+          
             if (!userData || userData.role !== "admin") {
-                navigate("/");
-                return;
+              navigate("/");
+              return;
             }
-
+          
             await fetchDestinations();
             setLoading(false);
-        };
+          };
 
         checkAdmin();
     }, [navigate, db]);
 
     const fetchDestinations = async () => {
         try {
-            const destinationsQuery = query(
-                collection(db, "destinations"), 
-                orderBy(sortField, sortDirection)
+            // Fetch all destinations
+            const destinationsSnapshot = await getDocs(collection(db, "destinations"));
+            const destinationsData = await Promise.all(
+                destinationsSnapshot.docs.map(async (doc) => {
+                    const destinationId = doc.id;
+
+                    // Fetch reviews for the destination
+                    const reviewsSnapshot = await getDocs(collection(db, "reviews"));
+                    const reviews = reviewsSnapshot.docs
+                        .filter(review => review.data().destinationId === destinationId)
+                        .map(review => review.data().rating);
+
+                    // Calculate average rating
+                    const averageRating = reviews.length > 0
+                        ? (reviews.reduce((sum, rating) => sum + rating, 0) / reviews.length)
+                        : 0;
+
+                    // Fetch all guides
+                    const guidesSnapshot = await getDocs(collection(db, "guides"));
+                    const guides = guidesSnapshot.docs;
+
+                    // Count affiliated guides for this destination
+                    const affiliatedGuides = guides.filter(guide => 
+                        guide.data().affiliatedDestinations?.includes(destinationId)
+                    ).length;
+
+                    return {
+                        id: destinationId,
+                        ...doc.data(),
+                        rating: averageRating,
+                        reviews: reviews.length,
+                        guides: affiliatedGuides // Number of affiliated guides
+                    };
+                })
             );
-            const destinationsSnapshot = await getDocs(destinationsQuery);
-            
-            const destinationsData = destinationsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || "N/A",
-            }));
-            
+
             setDestinations(destinationsData);
         } catch (error) {
             console.error("Error fetching destinations:", error);
         }
     };
 
-    const handleDeleteDestination = async () => {
-        if (!destinationToDelete) return;
-        
-        try {
-            await deleteDoc(doc(db, "destinations", destinationToDelete.id));
-            setDestinations(destinations.filter(dest => dest.id !== destinationToDelete.id));
-            setIsConfirmModalOpen(false);
-            setDestinationToDelete(null);
-        } catch (error) {
-            console.error("Error deleting destination:", error);
-        }
+    const handleExportData = () => {
+        const headers = ["Destination Name", "Rating", "Number of Reviews", "Affiliated Guides", "Location"];
+        const data = filteredDestinations.map(destination => [
+            destination.title,
+            destination.rating.toFixed(1),
+            destination.reviews,
+            destination.guides,
+            destination.location // Include location in the exported CSV
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...data.map(row => row.join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+        saveAs(blob, `destinations_${selectedRating === "all" ? "all" : selectedRating}.csv`);
     };
 
-    const handlePopularToggle = async (destId, currentStatus) => {
-        try {
-            await updateDoc(doc(db, "destinations", destId), {
-                isPopular: !currentStatus
-            });
-            
-            setDestinations(destinations.map(dest => 
-                dest.id === destId ? { ...dest, isPopular: !currentStatus } : dest
-            ));
-        } catch (error) {
-            console.error("Error updating destination popular status:", error);
-        }
-    };
-
-    const handleSort = (field) => {
-        if (sortField === field) {
-            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    const handleSort = (criteria) => {
+        if (sortCriteria === criteria) {
+            // Toggle sort order if the same criteria is selected
+            setSortOrder(sortOrder === "asc" ? "desc" : "asc");
         } else {
-            setSortField(field);
-            setSortDirection("asc");
+            // Set new criteria and default to ascending order
+            setSortCriteria(criteria);
+            setSortOrder("asc");
         }
-        
-        // For frontend sorting when not refetching from Firestore
-        const sortedDestinations = [...destinations].sort((a, b) => {
-            let aValue = a[field];
-            let bValue = b[field];
+    };
+
+    const filteredDestinations = showAllDestinations
+        ? destinations 
+        : destinations.filter(destination => {
+            const matchesSearch = 
+                destination.title?.toLowerCase().includes(searchTerm.toLowerCase());
             
-            if (sortDirection === "asc") {
-                return aValue > bValue ? 1 : -1;
-            } else {
-                return aValue < bValue ? 1 : -1;
-            }
+            const matchesRating = 
+                selectedRating === "all" || 
+                (destination.rating !== undefined && destination.rating >= parseFloat(selectedRating));
+            
+            return matchesSearch && matchesRating;
         });
-        
-        setDestinations(sortedDestinations);
-    };
 
-    const filteredDestinations = destinations.filter(dest => {
-        const matchesSearch = 
-            dest.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            dest.country?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchesContinent = selectedContinent === "all" || dest.continent === selectedContinent;
-        
-        return matchesSearch && matchesContinent;
+    // Sort destinations based on criteria and order
+    const sortedDestinations = [...filteredDestinations].sort((a, b) => {
+        if (sortCriteria === "name") {
+            // Sort by name (alphabetical order)
+            const nameA = a.title.toLowerCase();
+            const nameB = b.title.toLowerCase();
+            return sortOrder === "asc" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        } else if (sortCriteria === "rating") {
+            // Sort by rating
+            return sortOrder === "asc" ? a.rating - b.rating : b.rating - a.rating;
+        }
+        return 0;
     });
-
-    const getSortIcon = (field) => {
-        if (sortField !== field) return null;
-        return sortDirection === "asc" ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
-    };
-
-    const continentOptions = [
-        "Africa", 
-        "Asia", 
-        "Europe", 
-        "North America", 
-        "South America", 
-        "Australia/Oceania", 
-        "Antarctica"
-    ];
-
-    if (loading) return (
-        <div className="flex justify-center items-center h-screen">
-            <p className="text-lg text-gray-600">Loading destinations...</p>
-        </div>
-    );
 
     return (
         <div className="flex flex-row bg-gray-50 min-h-screen">
             {/* Left Sidebar - Admin Navigation */}
-            <div className="w-1/4">
+            <div className="">
                 <AdminNav />
             </div>
 
             {/* Right Side - Destinations List */}
-            <div className="p-6 ml-64 w-full">
+            <div className="p-6 w-full">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-800">Destinations Management</h1>
-                            <p className="text-gray-500">Manage your travel destinations</p>
+                            <p className="text-gray-500">Manage your platform destinations</p>
                         </div>
                         <button 
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center"
-                            onClick={() => navigate("/admin/destinations/create")}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center"
+                            onClick={handleExportData}
                         >
-                            <Plus size={16} className="mr-2" />
-                            Add New Destination
+                            <Download size={16} className="mr-2" />
+                            Export Data
                         </button>
                     </div>
 
@@ -173,28 +173,59 @@ const DestinationsList = () => {
                                 <Search size={20} className="absolute left-3 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search destinations by name or country..."
+                                    placeholder="Search destinations by name..."
                                     className="pl-10 pr-4 py-2 border rounded-lg w-full"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    disabled={showAllDestinations}
                                 />
                             </div>
                             <div className="flex items-center">
-                                <Filter size={18} className="text-gray-500 mr-2" />
+                                <label className="mr-2 text-gray-700">Rating:</label>
                                 <select
                                     className="border rounded-lg px-3 py-2"
-                                    value={selectedContinent}
-                                    onChange={(e) => setSelectedContinent(e.target.value)}
+                                    value={selectedRating}
+                                    onChange={(e) => setSelectedRating(e.target.value)}
+                                    disabled={showAllDestinations}
                                 >
-                                    <option value="all">All Continents</option>
-                                    {continentOptions.map(continent => (
-                                        <option key={continent} value={continent}>
-                                            {continent}
-                                        </option>
-                                    ))}
+                                    <option value="all">All Ratings</option>
+                                    <option value="4">4+ Stars</option>
+                                    <option value="3">3+ Stars</option>
+                                    <option value="2">2+ Stars</option>
+                                    <option value="1">1+ Stars</option>
                                 </select>
                             </div>
+                            <div className="flex items-center">
+                                <label className="mr-2 text-gray-700">Show All:</label>
+                                <input
+                                    type="checkbox"
+                                    checked={showAllDestinations}
+                                    onChange={(e) => setShowAllDestinations(e.target.checked)}
+                                />
+                            </div>
                         </div>
+                    </div>
+
+                    {/* Sorting Controls */}
+                    <div className="flex gap-4 mb-6">
+                        <button
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg flex items-center"
+                            onClick={() => handleSort("name")}
+                        >
+                            Sort by Name
+                            {sortCriteria === "name" && (
+                                sortOrder === "asc" ? <ArrowUp size={16} className="ml-2" /> : <ArrowDown size={16} className="ml-2" />
+                            )}
+                        </button>
+                        <button
+                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg flex items-center"
+                            onClick={() => handleSort("rating")}
+                        >
+                            Sort by Rating
+                            {sortCriteria === "rating" && (
+                                sortOrder === "asc" ? <ArrowUp size={16} className="ml-2" /> : <ArrowDown size={16} className="ml-2" />
+                            )}
+                        </button>
                     </div>
 
                     {/* Destinations Table */}
@@ -203,175 +234,73 @@ const DestinationsList = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th 
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                            onClick={() => handleSort("name")}
-                                        >
-                                            <div className="flex items-center">
-                                                Destination {getSortIcon("name")}
-                                            </div>
-                                        </th>
-                                        <th 
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                            onClick={() => handleSort("country")}
-                                        >
-                                            <div className="flex items-center">
-                                                Country {getSortIcon("country")}
-                                            </div>
-                                        </th>
-                                        <th 
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                            onClick={() => handleSort("continent")}
-                                        >
-                                            <div className="flex items-center">
-                                                Continent {getSortIcon("continent")}
-                                            </div>
-                                        </th>
-                                        <th 
-                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                            onClick={() => handleSort("createdAt")}
-                                        >
-                                            <div className="flex items-center">
-                                                Created {getSortIcon("createdAt")}
-                                            </div>
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviews</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Affiliated Guides</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredDestinations.length > 0 ? (
-                                        filteredDestinations.map((destination) => (
+                                    {sortedDestinations.length > 0 ? (
+                                        sortedDestinations.map((destination) => (
                                             <tr key={destination.id} className="hover:bg-gray-50">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
-                                                        <div className="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
-                                                            {destination.imageUrl ? (
-                                                                <img className="h-10 w-10 object-cover" src={destination.imageUrl} alt={destination.name} />
-                                                            ) : (
-                                                                <div className="h-10 w-10 flex items-center justify-center">
-                                                                    <MapPin size={20} className="text-gray-400" />
-                                                                </div>
-                                                            )}
+                                                        <div className="h-10 w-10 flex-shrink-0">
+                                                            <MapPin size={24} className="text-gray-500" />
                                                         </div>
                                                         <div className="ml-4">
-                                                            <div className="text-sm font-medium text-gray-900 flex items-center">
-                                                                {destination.name}
-                                                                {destination.isPopular && (
-                                                                    <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                                                                        Popular
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1">
-                                                                {destination.description?.substring(0, 40)}...
-                                                            </div>
+                                                            <div className="text-sm font-medium text-gray-900">{destination.title}</div>
+                                                            <div className="text-sm text-gray-500">ID: {destination.id.slice(0, 8)}...</div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-900">
-                                                        {destination.country || "Not specified"}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
-                                                        <Globe size={16} className="text-gray-400 mr-2" />
-                                                        <span className="text-sm text-gray-900">
-                                                            {destination.continent || "Not specified"}
-                                                        </span>
+                                                        <Star size={16} className="text-yellow-500 mr-1" />
+                                                        <span className="text-sm text-gray-900">{destination.rating.toFixed(1)}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {destination.createdAt}
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">{destination.reviews}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                        destination.isPopular 
-                                                            ? 'bg-yellow-100 text-yellow-800' 
-                                                            : 'bg-gray-100 text-gray-800'
-                                                    }`}>
-                                                        {destination.isPopular ? 'Popular' : 'Standard'}
-                                                    </span>
+                                                    <div className="flex items-center">
+                                                        <Users size={16} className="text-gray-500 mr-1" />
+                                                        <span className="text-sm text-gray-900">{destination.guides}</span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <div className="flex space-x-2">
-                                                        <button 
-                                                            onClick={() => navigate(`/admin/destinations/edit/${destination.id}`)}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                            title="Edit destination"
-                                                        >
-                                                            <Edit size={18} />
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => {
-                                                                setDestinationToDelete(destination);
-                                                                setIsConfirmModalOpen(true);
-                                                            }}
-                                                            className="text-red-600 hover:text-red-900"
-                                                            title="Delete destination"
-                                                        >
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handlePopularToggle(destination.id, destination.isPopular)}
-                                                            className={`hover:text-yellow-900 ${destination.isPopular ? 'text-yellow-500' : 'text-gray-400'}`}
-                                                            title={destination.isPopular ? "Remove from popular" : "Mark as popular"}
-                                                        >
-                                                            <Star size={18} />
-                                                        </button>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <Map size={16} className="text-gray-500 mr-1" />
+                                                        <span className="text-sm text-gray-900">{destination.location}</span>
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <MapPin size={48} className="text-gray-300 mb-2" />
-                                                    <p className="text-lg font-medium">No destinations found</p>
-                                                    <p className="text-sm mt-1">Try adjusting your search or filter</p>
-                                                </div>
+                                            <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                                                No destinations found matching your criteria
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            {/* Confirmation Modal */}
-            {isConfirmModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                        <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to delete "{destinationToDelete?.name}"? This action cannot be undone.
-                        </p>
-                        <div className="flex justify-end space-x-3">
-                        <button 
-                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                                    onClick={() => {
-                                        setIsConfirmModalOpen(false);
-                                        setDestinationToDelete(null);
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button 
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                                    onClick={handleDeleteDestination}
-                                >
-                                    Delete
-                                </button>
+                        <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
+                            <span className="text-sm text-gray-700">
+                                Showing <span className="font-medium">{sortedDestinations.length}</span> destinations
+                            </span>
+                            <div className="flex space-x-2">
+                                <button className="px-3 py-1 border rounded-md text-sm text-gray-600">Previous</button>
+                                <button className="px-3 py-1 border rounded-md bg-blue-600 text-sm text-white">Next</button>
                             </div>
                         </div>
                     </div>
-            )
-            
-            }
+                </div>
+            </div>
         </div>
     );
 };

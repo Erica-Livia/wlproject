@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase";
 import { getFirestore, doc, getDoc, collection, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
 import AdminNav from "../../components/AdminNav";
-import { User, Edit, Trash2, Search, UserX, Mail, Shield, UserCheck, Eye } from "lucide-react";
+import { User, Edit, Trash2, Search, UserX, Mail, Shield, UserCheck, Eye, Download } from "lucide-react";
+import { saveAs } from "file-saver";
 
 const UsersList = () => {
     const [loading, setLoading] = useState(true);
@@ -12,24 +13,24 @@ const UsersList = () => {
     const [selectedRole, setSelectedRole] = useState("all");
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
-
+    const [selectedUser, setSelectedUser] = useState(null);
     const navigate = useNavigate();
     const db = getFirestore();
 
     useEffect(() => {
         const checkAdmin = async () => {
             const user = auth.currentUser;
-            // if (!user) {
-            //     navigate("/login");
-            //     return;
-            // }
-
+            if (!user) {
+              navigate("/login");
+              return;
+            }
+          
             const userDoc = await getDoc(doc(db, "users", user.uid));
             const userData = userDoc.data();
-
+          
             if (!userData || userData.role !== "admin") {
-                navigate("/");
-                return;
+              navigate("/");
+              return;
             }
 
             await fetchUsers();
@@ -80,8 +81,27 @@ const UsersList = () => {
         }
     };
 
-    const handleViewUser = (userId) => {
-        navigate(`/admin/users/${userId}`);
+    const handleViewUser = (user) => {
+        setSelectedUser(user); // Open modal with user info
+    };
+
+    const handleExportData = () => {
+        const headers = ["Name", "Email", "Role", "Joined Date", "Status"];
+        const data = filteredUsers.map(user => [
+            user.name || "Anonymous User",
+            user.email,
+            user.role || "user",
+            user.createdAt,
+            user.isActive ? "Active" : "Inactive"
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...data.map(row => row.join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+        saveAs(blob, `users_${selectedRole === "all" ? "all" : selectedRole}.csv`);
     };
 
     const filteredUsers = users.filter(user => {
@@ -104,20 +124,23 @@ const UsersList = () => {
     };
 
     if (loading) return (
-        <div className="flex justify-center items-center h-screen">
-            <p className="text-lg text-gray-600">Loading users...</p>
+        <div className="flex flex-row bg-gray-50 min-h-screen">
+            <div className="w-1/4">
+                <AdminNav />
+            </div>
+            <p className="text-lg text-gray-600 p-6 ml-64 w-full">Loading List..</p>
         </div>
     );
 
     return (
         <div className="flex flex-row bg-gray-50 min-h-screen">
             {/* Left Sidebar - Admin Navigation */}
-            <div className="w-1/4">
+            <div className="">
                 <AdminNav />
             </div>
 
             {/* Right Side - Users List */}
-            <div className="p-6 ml-64 w-full">
+            <div className="p-6 w-full">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <div>
@@ -126,10 +149,10 @@ const UsersList = () => {
                         </div>
                         <button 
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center"
-                            onClick={() => navigate("/admin/users/add")}
+                            onClick={handleExportData}
                         >
-                            <User size={16} className="mr-2" />
-                            Add New User
+                            <Download size={16} className="mr-2" />
+                            Export Data
                         </button>
                     </div>
 
@@ -180,12 +203,12 @@ const UsersList = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredUsers.length > 0 ? (
                                         filteredUsers.map((user) => (
-                                            <tr key={user.id} className="hover:bg-gray-50">
+                                            <tr key={user.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleViewUser(user)}>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center">
                                                         <div className="h-10 w-10 flex-shrink-0">
                                                             {user.photoURL ? (
-                                                                <img className="h-10 w-10 rounded-full" src={user.photoURL} alt={user.displayName} />
+                                                                <img className="h-10 w-10 rounded-full" src={user.photoURL} alt={user.name} />
                                                             ) : (
                                                                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                                                                     <User size={20} className="text-gray-500" />
@@ -220,14 +243,10 @@ const UsersList = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <div className="flex space-x-2">
                                                         <button 
-                                                            onClick={() => handleViewUser(user.id)}
-                                                            className="text-blue-600 hover:text-blue-900"
-                                                            title="View details"
-                                                        >
-                                                            <Eye size={18} />
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => navigate(`/admin/users/edit/${user.id}`)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevent row click
+                                                                navigate(`/admin/users/edit/${user.id}`);
+                                                            }}
                                                             className="text-indigo-600 hover:text-indigo-900"
                                                             title="Edit user"
                                                         >
@@ -235,7 +254,8 @@ const UsersList = () => {
                                                         </button>
                                                         {user.role !== "admin" && (
                                                             <button 
-                                                                onClick={() => {
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); // Prevent row click
                                                                     setUserToDelete(user);
                                                                     setIsConfirmModalOpen(true);
                                                                 }}
@@ -247,7 +267,10 @@ const UsersList = () => {
                                                         )}
                                                         {user.role !== "admin" ? (
                                                             <button 
-                                                                onClick={() => handleRoleUpdate(user.id, "admin")}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); // Prevent row click
+                                                                    handleRoleUpdate(user.id, "admin");
+                                                                }}
                                                                 className="text-gray-600 hover:text-gray-900"
                                                                 title="Promote to admin"
                                                             >
@@ -255,7 +278,10 @@ const UsersList = () => {
                                                             </button>
                                                         ) : (
                                                             <button 
-                                                                onClick={() => handleRoleUpdate(user.id, "user")}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation(); // Prevent row click
+                                                                    handleRoleUpdate(user.id, "user");
+                                                                }}
                                                                 className="text-gray-600 hover:text-gray-900"
                                                                 title="Demote to regular user"
                                                             >
@@ -317,6 +343,35 @@ const UsersList = () => {
                                 onClick={handleDeleteUser}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* User Info Modal */}
+            {selectedUser && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                        <div className="flex items-center justify-center mb-4">
+                            <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                <User size={24} className="text-blue-600" />
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 text-center">User Details</h3>
+                        <div className="mt-4 space-y-2">
+                            <p><span className="font-semibold">Name:</span> {selectedUser.displayName || "Anonymous User"}</p>
+                            <p><span className="font-semibold">Email:</span> {selectedUser.email}</p>
+                            <p><span className="font-semibold">Role:</span> {selectedUser.role || "user"}</p>
+                            <p><span className="font-semibold">Joined Date:</span> {selectedUser.createdAt}</p>
+                            <p><span className="font-semibold">Status:</span> {selectedUser.isActive ? "Active" : "Inactive"}</p>
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button 
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                                onClick={() => setSelectedUser(null)}
+                            >
+                                Close
                             </button>
                         </div>
                     </div>
