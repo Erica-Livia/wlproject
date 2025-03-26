@@ -6,11 +6,13 @@ import { BsCalendar4Week } from "react-icons/bs";
 import { PiUserBold } from "react-icons/pi";
 import { FiChevronDown, FiChevronUp, FiLogOut } from "react-icons/fi";
 import { MdSettings, MdOutlineAttachMoney } from "react-icons/md";
+import { FaBars, FaTimes } from "react-icons/fa"; // Added icons for toggle button
 import { signOut } from 'firebase/auth';
 import { Link } from "react-router-dom";
 import { auth } from "../firebase";
 
 function GuideNav({ theme }) {
+    const [isExpanded, setIsExpanded] = useState(true); // State for sidebar expansion
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const dropdownRef = useRef(null);
@@ -53,40 +55,60 @@ function GuideNav({ theme }) {
         setIsDropdownOpen(!isDropdownOpen);
     };
 
+    // Toggle sidebar expansion
+    const toggleSidebar = () => {
+        setIsExpanded(!isExpanded);
+    };
+
     return (
         <>
-            <div className="font-poppins h-screen space-y-8 pl-6 py-8 w-80 bg-guidebg text-white">
+            <div
+                className={`font-poppins h-screen space-y-8 pl-6 pr-8 py-8 bg-guidebg text-white transition-all duration-200 ${isExpanded ? "w-80" : "w-24"
+                    }`}
+            >
+                {/* Toggle Button */}
+                <button
+                    onClick={toggleSidebar}
+                    className="absolute bottom-4 p-2 bg-guidebg rounded-full hover:bg-guidebg-dark transition-colors text-whiteText"
+                >
+                    {isExpanded ? <FaTimes className="text-24px" /> : <FaBars className="text-24px" />}
+                </button>
+
+                {/* Logo */}
                 <div className="text-24px font-bold pb-4">
-                    <a href="/guide-dashboard">Wanderlust Tour Guide</a>
+                    <a href="/guide-dashboard" className="whitespace-nowrap">
+                        {isExpanded ? "Wanderlust Tour Guide" : "WTG"}
+                    </a>
                 </div>
 
+                {/* Navigation Links */}
                 <div className="text-18px">
                     <ul className="space-y-8">
                         {/* Dashboard */}
                         <li>
                             <Link to="/guide-dashboard" className="flex items-center">
-                                <RxDashboard className="text-24px mr-2" /> Dashboard
+                                <RxDashboard className="text-24px mr-2" /> {isExpanded && "Dashboard"}
                             </Link>
                         </li>
 
                         {/* Bookings */}
                         <li>
                             <Link to="/guide-bookings" className="flex items-center">
-                                <BsCalendar4Week className="text-24px mr-2" /> Bookings
+                                <BsCalendar4Week className="text-24px mr-2" /> {isExpanded && "Bookings"}
                             </Link>
                         </li>
 
                         {/* Reviews */}
                         <li>
                             <Link to="/guide-reviews" className="flex items-center">
-                                <FaStarHalfStroke className="text-24px mr-2" /> Reviews
+                                <FaStarHalfStroke className="text-24px mr-2" /> {isExpanded && "Reviews"}
                             </Link>
                         </li>
 
                         {/* Earnings */}
                         <li>
                             <Link to="/guide-earnings" className="flex items-center">
-                                <MdOutlineAttachMoney className="text-24px mr-2" /> Earnings
+                                <MdOutlineAttachMoney className="text-24px mr-2" /> {isExpanded && "Earnings"}
                             </Link>
                         </li>
 
@@ -97,7 +119,7 @@ function GuideNav({ theme }) {
                                 className="flex items-center w-full text-left focus:outline-none"
                             >
                                 <PiUserBold className="text-24px mr-2" />
-                                Profile
+                                {isExpanded && "Profile"}
                                 {isDropdownOpen ?
                                     <FiChevronUp className="ml-2" /> :
                                     <FiChevronDown className="ml-2" />
@@ -105,7 +127,7 @@ function GuideNav({ theme }) {
                             </button>
 
                             {/* Dropdown Menu */}
-                            {isDropdownOpen && (
+                            {isDropdownOpen && isExpanded && (
                                 <div className="absolute left-8 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10 text-16px">
                                     {/* Profile Settings */}
                                     <Link

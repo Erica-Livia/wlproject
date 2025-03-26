@@ -116,10 +116,10 @@ const UsersList = () => {
 
     const getRoleBadgeColor = (role) => {
         switch(role) {
-            case "admin": return "bg-red-100 text-red-800";
-            case "guide": return "bg-blue-100 text-blue-800";
-            case "premium": return "bg-purple-100 text-purple-800";
-            default: return "bg-gray-100 text-gray-800";
+            case "admin": return "bg-orange-100 text-red-800";
+            case "guide": return "bg-orange-100 text-blue-800";
+            case "premium": return "bg-orange-100 text-purple-800";
+            default: return "bg-orange-100 text-gray-800";
         }
     };
 
@@ -133,7 +133,7 @@ const UsersList = () => {
     );
 
     return (
-        <div className="flex flex-row bg-gray-50 min-h-screen">
+        <div className="flex flex-row bg-white min-h-screen font-poppins">
             {/* Left Sidebar - Admin Navigation */}
             <div className="">
                 <AdminNav />
@@ -144,11 +144,10 @@ const UsersList = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-800">Users Management</h1>
-                            <p className="text-gray-500">Manage your platform users</p>
+                            <h1 className="text-2xl font-bold text-gray-800">Users Management</h1>
                         </div>
                         <button 
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center"
+                            className="px-4 py-2 bg-adminbg text-white rounded-lg flex items-center"
                             onClick={handleExportData}
                         >
                             <Download size={16} className="mr-2" />
@@ -196,7 +195,7 @@ const UsersList = () => {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined Date</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th> */}
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
@@ -235,11 +234,11 @@ const UsersList = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {user.createdAt}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                {/* <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                                                         {user.isActive ? "Active" : "Inactive"}
                                                     </span>
-                                                </td>
+                                                </td> */}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <div className="flex space-x-2">
                                                         <button 
@@ -247,7 +246,7 @@ const UsersList = () => {
                                                                 e.stopPropagation(); // Prevent row click
                                                                 navigate(`/admin/users/edit/${user.id}`);
                                                             }}
-                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                            className="text-adminbg hover:text-indigo-900"
                                                             title="Edit user"
                                                         >
                                                             <Edit size={18} />
@@ -308,7 +307,7 @@ const UsersList = () => {
                             </span>
                             <div className="flex space-x-2">
                                 <button className="px-3 py-1 border rounded-md text-sm text-gray-600">Previous</button>
-                                <button className="px-3 py-1 border rounded-md bg-blue-600 text-sm text-white">Next</button>
+                                <button className="px-3 py-1 border rounded-md bg-adminbg text-sm text-white">Next</button>
                             </div>
                         </div>
                     </div>
@@ -364,7 +363,7 @@ const UsersList = () => {
                             <p><span className="font-semibold">Email:</span> {selectedUser.email}</p>
                             <p><span className="font-semibold">Role:</span> {selectedUser.role || "user"}</p>
                             <p><span className="font-semibold">Joined Date:</span> {selectedUser.createdAt}</p>
-                            <p><span className="font-semibold">Status:</span> {selectedUser.isActive ? "Active" : "Inactive"}</p>
+                            {/* <p><span className="font-semibold">Status:</span> {selectedUser.isActive ? "Active" : "Inactive"}</p> */}
                         </div>
                         <div className="mt-6 flex justify-end">
                             <button 

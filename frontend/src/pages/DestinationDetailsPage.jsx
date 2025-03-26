@@ -2,15 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import { FaStar, FaRegStar, FaChevronLeft } from "react-icons/fa";
+import { FaStar, FaRegStar, FaChevronLeft, FaReply, FaExclamationCircle } from "react-icons/fa";
 import NavBar from "../components/NavBar";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import LoginPage from "./LoginPage";
-import StartChat from "../components/StartChat";
 import { CiEdit } from "react-icons/ci";
 import { IoTrashBinOutline } from "react-icons/io5";
+import { motion, AnimatePresence } from "framer-motion";
 
 function DestinationDetailsPage({ theme, toggleTheme }) {
     const { id } = useParams();
@@ -38,7 +38,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    setDestination(docSnap.data());
+                    setDestination({ id: docSnap.id, ...docSnap.data() });
                 } else {
                     console.error("Destination not found");
                 }
@@ -91,6 +91,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                 description: reviewDescription,
                 rating: reviewRating,
                 timestamp: new Date(),
+                hidden: false, // Default to false
             });
 
             // Refresh reviews
@@ -193,57 +194,6 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
         }
     };
 
-    const handleContactGuide = async (guideId) => {
-        if (!user) {
-            setShowLoginModal(true);
-            return;
-        }
-
-        try {
-            // Check if a chat session already exists
-            const chatSessionQuery = query(
-                collection(db, "chatSessions"),
-                where("guideId", "==", guideId),
-                where("userId", "==", user.uid)
-            );
-            const chatSessionSnapshot = await getDocs(chatSessionQuery);
-
-            let chatId;
-
-            if (chatSessionSnapshot.empty) {
-                // Create a new chat session
-                const newChatSession = await addDoc(collection(db, "chatSessions"), {
-                    guideId,
-                    userId: user.uid,
-                    userName: user.displayName || "Anonymous",
-                    guideName: guides.find((g) => g.id === guideId)?.name || "Guide",
-                    lastMessage: "Chat started",
-                    lastMessageTimestamp: serverTimestamp(),
-                    status: "active",
-                });
-
-                chatId = newChatSession.id;
-
-                // Add the first message to the chats collection
-                await addDoc(collection(db, "chats"), {
-                    guideId,
-                    userId: user.userId,
-                    userName: user.name,
-                    message: "Hello, I need help!",
-                    timestamp: serverTimestamp(),
-                });
-            } else {
-                // Use the existing chat session ID
-                chatId = chatSessionSnapshot.docs[0].id;
-            }
-
-            // Redirect to the chat page
-            navigate(`/chat/${guideId}`);
-        } catch (error) {
-            console.error("Error starting chat:", error);
-        }
-    };
-
     const handleCloseLoginModal = () => {
         setShowLoginModal(false);
     };
@@ -333,7 +283,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                                     <h4 className="text-center font-semibold">{guide.name}</h4>
                                     <p className="text-center text-sm text-gray-600">{guide.category}</p>
                                     <button
-                                        onClick={() => navigate(`/book-guide/${guide.id}`)}
+                                        onClick={() => navigate(`/guide-book/${guide.id}/${destination.id}`)}
                                         className="mt-4 w-full bg-khaki text-white px-4 py-2 rounded-lg hover:bg-green"
                                     >
                                         Book Now
@@ -346,7 +296,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                     {/* Combined Rating and Reviews Section */}
                     <div className="mt-6">
                         <h3 className="text-lg font-semibold mb-8">Average Rating: {averageRating}⭐</h3>
-                        <h4>Want to share an experience from this destination? Leave a review bellow!</h4>
+                        <h4>Want to share an experience from this destination? Leave a review below!</h4>
                         <button
                             onClick={() => (user ? setShowReviewForm(true) : setShowLoginModal(true))}
                             className="mt-4 bg-khaki text-white px-4 py-2 rounded-lg hover:bg-green transition"
@@ -357,8 +307,16 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                             {reviews.length === 0 ? (
                                 <p className="text-gray-500">No reviews yet. Be the first to write one!</p>
                             ) : (
-                                reviews.map((review) => (
-                                    <div key={review.id} className="bg-gray-100 p-4 rounded-lg mb-4">
+                                reviews
+                                .filter((review) => !review.hidden)
+                                .map((review) => (
+                                    <motion.div
+                                        key={review.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        className="bg-gray-100 p-4 rounded-lg mb-4"
+                                    >
                                         <h4 className="font-semibold">{review.title}</h4>
                                         <p className="text-gray-600">{review.description}</p>
                                         <div className="flex items-center mt-2">
@@ -372,6 +330,23 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                                         <p className="text-sm text-gray-500 mt-2">
                                             By {review.userName} • {new Date(review.timestamp?.toDate()).toLocaleDateString()}
                                         </p>
+
+                                        {/* Admin Reply Section */}
+                                        {review.reply && (
+                                            <div className="mt-4 p-4 bg-white rounded-lg border-l-4 border-blue-500">
+                                                <div className="flex items-center gap-2">
+                                                    <FaReply className="text-blue-500" />
+                                                    <div>
+                                                        <p className="text-sm text-gray-700">{review.reply}</p>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Replied by {review.guideName || "Guide"} •{" "}
+                                                            {new Date().toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Edit and Delete Buttons */}
                                         {user && review.userId === user.uid && (
                                             <div className="flex gap-2 mt-4">
@@ -389,11 +364,20 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                                                 </button>
                                             </div>
                                         )}
-                                    </div>
-                                ))
-                            )}
+
+                                        {/* Report Button for Visitors */}
+                                        {user && review.userId !== user.uid && (
+                                            <button
+                                                onClick={() => handleReportReview(review.id)}
+                                                className="mt-2 flex items-center gap-2 text-sm text-red-500 hover:text-red-700"
+                                            >
+                                                <FaExclamationCircle />
+                                                Report
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                )))}
                         </div>
-                        
                     </div>
 
                     {/* Review Form Modal */}
@@ -490,15 +474,6 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
                             </div>
                         </div>
                     )}
-
-                    {/* {user && reviews.userId !== user.uid && (
-                        <button
-                            onClick={() => handleReportReview(reviews.id)}
-                            className="bg-red-500 text-white px-2 py-1 rounded-lg hover:bg-red-600"
-                        >
-                            Report
-                        </button>
-                    )} */}
                 </div>
             </div>
 

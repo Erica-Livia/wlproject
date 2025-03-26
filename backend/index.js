@@ -4,6 +4,7 @@ const app = express();
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
 const cors = require('cors');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const credentials = require("./serviceAccountKey.json");
 const bodyParser = require('body-parser');
 
@@ -15,17 +16,15 @@ admin.initializeApp({
 // Initialize Firestore
 const db = admin.firestore();
 
-
 // Middleware
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
-})); // Enable CORS for all routes
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Middleware to parse JSON body
 app.use(bodyParser.json());
 
 // Nodemailer configuration
@@ -56,6 +55,132 @@ const sendWelcomeEmail = async (email, firstName) => {
     }
 };
 
+// Stripe Payment Intent Endpoint with BIF to USD Conversion
+app.post('/create-payment-intent', async (req, res) => {
+    try {
+        const { amount, currency, bookingId, isBIF } = req.body;
+        
+        // Validate input
+        if (!amount || !bookingId) {
+            return res.status(400).json({ error: "Amount and bookingId are required" });
+        }
+
+        // Verify booking exists
+        const bookingRef = db.collection('bookings').doc(bookingId);
+        const bookingDoc = await bookingRef.get();
+        
+        if (!bookingDoc.exists) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        // Currency conversion and validation
+        const BIF_TO_USD_RATE = 2500; // 1 USD = 2500 BIF
+        let paymentAmount;
+        let paymentCurrency = 'usd'; // Stripe only accepts USD in Burundi
+
+        if (isBIF) {
+            // Convert BIF to USD cents
+            paymentAmount = Math.round((amount / BIF_TO_USD_RATE) * 100);
+            
+            // Validate minimum amount (e.g., $1 minimum)
+            if (paymentAmount < 100) {
+                return res.status(400).json({ 
+                    error: `Amount too small. Minimum payment is ${formatBIF(BIF_TO_USD_RATE * 1)} (≈ $1 USD)`
+                });
+            }
+        } else {
+            // Assume amount is already in USD
+            paymentAmount = Math.round(amount * 100);
+        }
+
+        // Verify the converted amount matches the booking amount within tolerance
+        const bookingPrice = bookingDoc.data().price; // Original price in BIF
+        const expectedUSD = bookingPrice / BIF_TO_USD_RATE;
+        const amountDifference = Math.abs((paymentAmount/100) - expectedUSD);
+        
+        if (amountDifference > 1.00) { // Allow $1 variance
+            return res.status(400).json({ 
+                error: `Payment amount mismatch. Expected ≈ $${expectedUSD.toFixed(2)} USD for ${formatBIF(bookingPrice)}`
+            });
+        }
+
+        // Create payment intent
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: paymentAmount,
+            currency: paymentCurrency,
+            metadata: { 
+                bookingId,
+                originalAmountBIF: isBIF ? amount : bookingPrice,
+                originalCurrency: 'bif',
+                convertedAmountUSD: (paymentAmount/100).toFixed(2),
+                userId: bookingDoc.data().userId 
+            },
+            description: `Payment for booking ${bookingId}`,
+            payment_method_types: ['card']
+        });
+
+        res.json({ 
+            clientSecret: paymentIntent.client_secret,
+            amount: paymentIntent.amount / 100, // Return amount in dollars
+            currency: paymentIntent.currency,
+            originalAmount: isBIF ? amount : null,
+            originalCurrency: isBIF ? 'bif' : null
+        });
+
+    } catch (error) {
+        console.error("Payment intent error:", error);
+        res.status(500).json({ 
+            error: "Payment processing error",
+            details: process.env.NODE_ENV === 'development' ? error.message : null
+        });
+    }
+});
+
+// Helper function to format BIF amounts
+function formatBIF(amount) {
+    return new Intl.NumberFormat('bi-BI', {
+        style: 'currency',
+        currency: 'BIF',
+        minimumFractionDigits: 0
+    }).format(amount);
+}
+
+// Webhook for successful payments
+app.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } catch (err) {
+        console.error('Webhook signature verification failed:', err);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the payment_intent.succeeded event
+    if (event.type === 'payment_intent.succeeded') {
+        const paymentIntent = event.data.object;
+        
+        try {
+            // Update booking status in Firestore
+            const bookingId = paymentIntent.metadata.bookingId;
+            await db.collection('bookings').doc(bookingId).update({
+                status: "Paid",
+                paymentId: paymentIntent.id,
+                paidAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`Booking ${bookingId} marked as paid`);
+        } catch (error) {
+            console.error('Error updating booking:', error);
+        }
+    }
+
+    res.json({ received: true });
+});
+
 // Signup endpoint
 app.post('/api/signup', async (req, res) => {
     const { email, password, firstName, lastName } = req.body;
@@ -74,7 +199,7 @@ app.post('/api/signup', async (req, res) => {
             emailVerified: false
         });
 
-        // Create user document in Firestore with firstName, lastName, and default role
+        // Create user document in Firestore
         await db.collection('users').doc(userRecord.uid).set({
             email,
             firstName,
@@ -102,16 +227,12 @@ app.post('/api/signup', async (req, res) => {
     }
 });
 
-
 // Login endpoint
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // Get user by email
         const userRecord = await admin.auth().getUserByEmail(email);
-        
-        // Get user data from Firestore
         const userDoc = await db.collection('users').doc(userRecord.uid).get();
         
         if (!userDoc.exists) {
@@ -125,7 +246,6 @@ app.post('/api/login', async (req, res) => {
 
         const userData = userDoc.exists ? userDoc.data() : { role: 'user' };
 
-        // Send response with user data
         res.json({
             uid: userRecord.uid,
             email: userRecord.email,
@@ -141,69 +261,34 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-//endpoint to update user role (admin only)
-app.post('/api/updateRole', async (req, res) => {
-    const { uid, newRole } = req.body;
-    const adminToken = req.headers.authorization?.split('Bearer ')[1];
+// Update booking status after payment (alternative to webhook)
+app.post('/api/bookings/pay', async (req, res) => {
+    const { bookingId, paymentId } = req.body;
+    if (!bookingId || !paymentId) {
+        return res.status(400).json({ error: "Booking ID and payment ID are required" });
+    }
 
     try {
-        // Verify admin token
-        const decodedToken = await admin.auth().verifyIdToken(adminToken);
-        const adminDoc = await db.collection('users').doc(decodedToken.uid).get();
+        // Verify the payment with Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
         
-        if (adminDoc.data().role !== 'admin') {
-            throw new Error('Unauthorized');
+        if (paymentIntent.status !== 'succeeded') {
+            return res.status(400).json({ error: "Payment not completed" });
         }
 
-        // Update role in Firestore
-        await db.collection('users').doc(uid).update({
-            role: newRole
+        // Update booking status
+        await db.collection('bookings').doc(bookingId).update({
+            status: "Paid",
+            paymentId: paymentIntent.id,
+            paidAt: admin.firestore.FieldValue.serverTimestamp()
         });
-
-        // Update custom claims
-        await admin.auth().setCustomUserClaims(uid, { role: newRole });
-
-        res.json({ message: 'Role updated successfully' });
-    } catch (error) {
-        console.error("Role update error:", error);
-        res.status(403).json({ error: 'Unauthorized to update roles' });
-    }
-});
-// fetch user's bookings
-app.get('/api/bookings', async (req, res) => {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "User ID is required" });
-
-    try {
-        const bookingsRef = db.collection('bookings').where('userId', '==', userId);
-        const snapshot = await bookingsRef.get();
-
-        let bookings = [];
-        snapshot.forEach(doc => {
-            bookings.push({ id: doc.id, ...doc.data() });
-        });
-
-        res.json(bookings);
-    } catch (error) {
-        res.status(500).json({ error: "Failed to fetch bookings" });
-    }
-});
-
-// updae booking status after payment
-app.post('/api/bookings/pay', async (req, res) => {
-    const { bookingId } = req.body;
-    if (!bookingId) return res.status(400).json({ error: "Booking ID is required" });
-
-    try {
-        const bookingRef = db.collection('bookings').doc(bookingId);
-        await bookingRef.update({ status: "Paid" });
 
         res.json({ success: true, message: "Booking marked as paid" });
     } catch (error) {
+        console.error("Payment verification error:", error);
         res.status(500).json({ error: "Failed to update booking" });
     }
 });
-
 
 // Verify token middleware
 const verifyToken = async (req, res, next) => {
@@ -221,8 +306,6 @@ const verifyToken = async (req, res, next) => {
         res.status(401).json({ error: 'Invalid token' });
     }
 };
-
-
 
 // Protected route example
 app.get('/api/protected', verifyToken, (req, res) => {

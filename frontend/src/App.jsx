@@ -20,10 +20,13 @@ import UsersList from "./pages/adminview/UsersList";
 import DestinationsList from "./pages/adminview/DestinationsList";
 import CreateDestination from "./pages/adminview/DestinationCreation";
 import GuideBookingPage from "./pages/GuideBookingPage";
-import GuideReviewsList from "./pages/guideview/GuideReviewsList";
-import GuideInbox from "./pages/guideview/GuideInbox";
+import GuideReviewsPage from "./pages/guideview/GuideReviewsList";
+import GuideBookingsPage from "./pages/guideview/Bookings";
 import Bookings from "./pages/Bookings";
 import UserProfileSetting from "./pages/UserProfile";
+import GuideRevenueDashboard from "./pages/guideview/GuideRevenueDashboard";
+import AdminPayoutApproval from "./pages/adminview/AdminPayoutApproval";
+import AdminRevenueTracking from "./pages/adminview/AdminRevenueTracking";
 
 function App() {
   const [theme, setTheme] = useState("dark");
@@ -76,19 +79,22 @@ function App() {
 
           {/* Guides Routes */}
           <Route path="/guide-dashboard" element={<GDashboard />} />
-          <Route path="/guide-inbox" element={<GuideInbox />} />
-          <Route path="/guide-reviews" element={<GuideReviewsList />} />
+          <Route path="/guide-earnings" element={<GuideRevenueDashboard/>} />
+          <Route path="/guide-reviews" element={<GuideReviewsPage />} />
           <Route path="/guide-profile-setting" element={<GuideProfileSetting />} />
 
           {/* Admin Routes */}
           <Route path="/admin-users-list" element={<UsersList />} />
           <Route path="/admin-destinations-list" element={<DestinationsList />} />
           <Route path="/admin-destinations-create" element={<CreateDestination />} />
+          <Route path="/admin-payout-request" element={<AdminPayoutApproval />} />
+          <Route path="/admin-revenue" element={<AdminRevenueTracking />} />
 
           {/* Other Routes */}
-          <Route path="/book-guide/" element={<GuideBookingPage theme={theme} toggleTheme={toggleTheme} />} />
-          <Route path="/book-guide/:guideId" element={<GuideBookingPage theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/guide-bookings/" element={<GuideBookingsPage theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/guide-book/:guideId/:destinationId" element={<GuideBookingPage theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/mybookings/" element={<Bookings theme={theme} toggleTheme={toggleTheme} />} />
+
 
           {/* Protected routes */}
           <Route path="/settings" element={<UserSettings />} />

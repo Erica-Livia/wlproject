@@ -11,8 +11,9 @@ import "react-toastify/dist/ReactToastify.css";
 import { PulseLoader } from "react-spinners";
 
 function GuideBookingPage() {
-  const { guideId } = useParams();
+  const { guideId, destinationId } = useParams();
   const [guide, setGuide] = useState(null);
+  const [destination, setDestination] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState("");
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
@@ -20,33 +21,54 @@ function GuideBookingPage() {
   const [isBooking, setIsBooking] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch guide's availability
+  // Debugging: Log guideId and destinationId
+  console.log("Guide ID:", guideId, "Destination ID:", destinationId);
+
+  // Fetch guide and destination details
   useEffect(() => {
-    const fetchGuide = async () => {
+    const fetchData = async () => {
       try {
-        const guideDoc = await getDoc(doc(db, "guides", guideId));
-        if (guideDoc.exists()) {
-          const guideData = guideDoc.data();
-          // Ensure availability is an array
-          if (!guideData.availability || !Array.isArray(guideData.availability)) {
-            guideData.availability = [];
-          }
-          setGuide(guideData);
-          generateAvailableSlotsForDate(selectedDate, guideData.availability);
-        } else {
-          toast.error("Guide not found");
-          navigate("/"); // Redirect if guide not found
+        // Validate guideId and destinationId
+        if (!guideId || !destinationId) {
+          toast.error("Invalid guide or destination ID.");
+          navigate("/");
+          return;
         }
+
+        // Fetch guide details
+        const guideDoc = await getDoc(doc(db, "guides", guideId));
+        if (!guideDoc.exists()) {
+          toast.error("Guide not found.");
+          navigate("/");
+          return;
+        }
+        const guideData = guideDoc.data();
+        if (!guideData.availability || !Array.isArray(guideData.availability)) {
+          guideData.availability = [];
+        }
+        setGuide(guideData);
+
+        // Fetch destination details
+        const destinationDoc = await getDoc(doc(db, "destinations", destinationId));
+        if (!destinationDoc.exists()) {
+          toast.error("Destination not found.");
+          navigate("/");
+          return;
+        }
+        setDestination(destinationDoc.data());
+
+        // Generate available slots for the selected date
+        generateAvailableSlotsForDate(selectedDate, guideData.availability);
       } catch (error) {
-        toast.error("Error fetching guide details");
-        console.error("Error fetching guide:", error);
+        toast.error("Error fetching data");
+        console.error("Error:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGuide();
-  }, [guideId, navigate]);
+    fetchData();
+  }, [guideId, destinationId, navigate]);
 
   // Generate 1-hour time slots from the guide's availability
   const generateTimeSlots = (startTime, endTime) => {
@@ -57,20 +79,19 @@ function GuideBookingPage() {
     let current = new Date(start);
     while (current < end) {
       const timeString = current.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       });
 
       const nextHour = new Date(current);
       nextHour.setHours(current.getHours() + 1);
 
-      // If next hour exceeds end time, don't add this slot
       if (nextHour <= end) {
         const endTimeString = nextHour.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
         });
 
         slots.push(`${timeString} - ${endTimeString}`);
@@ -92,20 +113,14 @@ function GuideBookingPage() {
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const dayName = dayNames[date.getDay()];
 
-    // Check for existing bookings (This would need to be implemented to block already booked slots)
     const dateKey = date.toISOString().split("T")[0];
     const existingBookings = guide?.bookedSlots?.[dateKey] || [];
 
-    // Find matching day in availability
-    const daySchedule = availability.find(schedule => schedule.day === dayName);
+    const daySchedule = availability.find((schedule) => schedule.day === dayName);
 
     if (daySchedule) {
-      // Generate 1-hour slots
       const slots = generateTimeSlots(daySchedule.startTime, daySchedule.endTime);
-
-      // Filter out already booked slots
-      const availableSlots = slots.filter(slot => !existingBookings.includes(slot));
-
+      const availableSlots = slots.filter((slot) => !existingBookings.includes(slot));
       setAvailableTimeSlots(availableSlots);
     } else {
       setAvailableTimeSlots([]);
@@ -115,7 +130,7 @@ function GuideBookingPage() {
   // Handle date selection
   const handleDateChange = (date) => {
     setSelectedDate(date);
-    setSelectedSlot(""); // Reset selected slot when date changes
+    setSelectedSlot("");
     generateAvailableSlotsForDate(date, guide?.availability);
   };
 
@@ -128,7 +143,7 @@ function GuideBookingPage() {
   const handleBooking = async () => {
     if (!auth.currentUser) {
       toast.warn("Please log in to book a guide.");
-      navigate("/login"); // Redirect to login page
+      navigate("/login");
       return;
     }
 
@@ -147,6 +162,9 @@ function GuideBookingPage() {
         userEmail: auth.currentUser.email,
         guideId,
         guideName: guide.name,
+        destinationId, 
+        destinationName: destination.title, // Include destination name
+        price: destination.price, // Include destination price
         date: dateKey,
         time: selectedSlot,
         status: "pending",
@@ -170,7 +188,7 @@ function GuideBookingPage() {
       });
 
       toast.success("Booking successful!");
-      setTimeout(() => navigate("/mybookings"), 2000); // Redirect after 2 seconds
+      setTimeout(() => navigate("/mybookings"), 2000);
     } catch (error) {
       toast.error("Failed to book. Please try again.");
       console.error("Booking error:", error);
@@ -186,7 +204,7 @@ function GuideBookingPage() {
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const dayName = dayNames[date.getDay()];
 
-    return guide.availability.some(schedule => schedule.day === dayName);
+    return guide.availability.some((schedule) => schedule.day === dayName);
   };
 
   // Custom tile content for the calendar
@@ -204,12 +222,10 @@ function GuideBookingPage() {
   // Custom tile class for the calendar
   const tileClassName = ({ date, view }) => {
     if (view === "month") {
-      // Highlight dates with available slots
       if (hasAvailableSlots(date)) {
         return "available-date";
       }
 
-      // Disable dates in the past
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (date < today) {
@@ -225,7 +241,7 @@ function GuideBookingPage() {
       "Are you sure you want to leave? Your selections will be lost."
     );
     if (confirmCancel) {
-      navigate("/"); // Navigate to the homepage
+      navigate("/");
     }
   };
 
@@ -237,8 +253,8 @@ function GuideBookingPage() {
     );
   }
 
-  if (!guide) {
-    return <p className="text-center p-6">Guide not found.</p>;
+  if (!guide || !destination) {
+    return <p className="text-center p-6">Guide or destination not found.</p>;
   }
 
   return (
@@ -284,7 +300,7 @@ function GuideBookingPage() {
             value={selectedDate}
             tileContent={tileContent}
             tileClassName={tileClassName}
-            minDate={new Date()} 
+            minDate={new Date()}
             className="react-calendar mx-auto"
           />
           <div className="mt-4 flex items-center justify-center">
@@ -332,8 +348,10 @@ function GuideBookingPage() {
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <h3 className="font-semibold text-lg mb-2">Booking Summary</h3>
               <p className="mb-1"><strong>Guide:</strong> {guide.name}</p>
+              <p className="mb-1"><strong>Destination:</strong> {destination.title}</p>
               <p className="mb-1"><strong>Date:</strong> {selectedDate.toLocaleDateString()}</p>
               <p className="mb-1"><strong>Time:</strong> {selectedSlot}</p>
+              <p className="mb-1"><strong>Price:</strong> ${destination.price}</p>
             </div>
           )}
 

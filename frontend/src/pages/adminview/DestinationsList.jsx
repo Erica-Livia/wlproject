@@ -143,7 +143,7 @@ const DestinationsList = () => {
     });
 
     return (
-        <div className="flex flex-row bg-gray-50 min-h-screen">
+        <div className="flex flex-row bg-white min-h-screen font-poppins">
             {/* Left Sidebar - Admin Navigation */}
             <div className="">
                 <AdminNav />
@@ -154,11 +154,10 @@ const DestinationsList = () => {
                 <div className="max-w-7xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-800">Destinations Management</h1>
-                            <p className="text-gray-500">Manage your platform destinations</p>
+                            <h1 className="text-2xl font-bold text-gray-800">Destinations Management</h1>
                         </div>
                         <button 
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center"
+                            className="px-4 py-2 bg-adminbg text-white rounded-lg flex items-center"
                             onClick={handleExportData}
                         >
                             <Download size={16} className="mr-2" />
@@ -295,7 +294,7 @@ const DestinationsList = () => {
                             </span>
                             <div className="flex space-x-2">
                                 <button className="px-3 py-1 border rounded-md text-sm text-gray-600">Previous</button>
-                                <button className="px-3 py-1 border rounded-md bg-blue-600 text-sm text-white">Next</button>
+                                <button className="px-3 py-1 border rounded-md bg-adminbg text-sm text-white">Next</button>
                             </div>
                         </div>
                     </div>

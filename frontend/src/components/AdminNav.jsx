@@ -4,9 +4,12 @@ import { PiUsersThreeLight, PiUserBold } from "react-icons/pi";
 import { GoReport } from "react-icons/go";
 import { MapPin } from "lucide-react"; // New icon for destinations
 import { Link } from "react-router-dom";
-import { FaBars, FaTimes, FaSignOutAlt } from "react-icons/fa"; // Added FaSignOutAlt for logout
+import { FaBars, FaTimes, FaSignOutAlt } from "react-icons/fa";
+import { MdSettings, MdOutlineAttachMoney } from "react-icons/md";
+import { TbCashRegister } from "react-icons/tb";
 import { signOut } from "firebase/auth"; // Import signOut from Firebase
 import { auth } from "../firebase"; // Import auth from Firebase config
+import AdminPayoutApproval from "../pages/adminview/AdminPayoutApproval";
 
 function AdminNav() {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -30,7 +33,7 @@ function AdminNav() {
 
   return (
     <div
-      className={`font-poppins h-screen space-y-8 pl-8 py-8 bg-adminbg text-white transition-all duration-200 ${
+      className={`font-poppins h-screen space-y-8 pl-8 pr-8 py-8 bg-adminbg text-white transition-all duration-200 ${
         isExpanded ? "w-80" : "w-24"
       }`}
     >
@@ -71,9 +74,15 @@ function AdminNav() {
             </Link>
           </li>
           <li>
-            <Link to="/admin-reports-list" className="flex items-center hover:underline">
-              <GoReport className="text-24px mr-2" />
-              {isExpanded && "Reports"}
+            <Link to="/admin-revenue" className="flex items-center hover:underline">
+              <MdOutlineAttachMoney className="text-24px mr-2" />
+              {isExpanded && "Revenues"}
+            </Link>
+          </li>
+          <li>
+            <Link to="/admin-payout-request" className="flex items-center hover:underline">
+              <TbCashRegister className="text-24px mr-2" />
+              {isExpanded && "Cash Out"}
             </Link>
           </li>
           <li className="relative">

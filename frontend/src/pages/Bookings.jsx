@@ -3,9 +3,10 @@ import { db, auth } from "../firebase";
 import { collection, query, where, onSnapshot, updateDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { FaHome, FaCreditCard, FaSpinner } from "react-icons/fa";
-import PaymentForm from "../components/PaymentForm";
+import PaymentWrapper from '../components/PaymentWrapper';
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { convertBIFtoUSD, formatBIF } from '../utils/currency';
 
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -147,31 +148,28 @@ const Bookings = () => {
       <div className="flex gap-4 mb-6">
         <button
           onClick={() => setFilter("upcoming")}
-          className={`px-4 py-2 rounded-lg ${
-            filter === "upcoming"
-              ? "bg-khaki text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
+          className={`px-4 py-2 rounded-lg ${filter === "upcoming"
+            ? "bg-khaki text-white"
+            : "bg-gray-200 text-gray-800"
+            }`}
         >
           Upcoming Tours
         </button>
         <button
           onClick={() => setFilter("today")}
-          className={`px-4 py-2 rounded-lg ${
-            filter === "today"
-              ? "bg-khaki text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
+          className={`px-4 py-2 rounded-lg ${filter === "today"
+            ? "bg-khaki text-white"
+            : "bg-gray-200 text-gray-800"
+            }`}
         >
           Today's Tours
         </button>
         <button
           onClick={() => setFilter("past")}
-          className={`px-4 py-2 rounded-lg ${
-            filter === "past"
-              ? "bg-khaki text-white"
-              : "bg-gray-200 text-gray-800"
-          }`}
+          className={`px-4 py-2 rounded-lg ${filter === "past"
+            ? "bg-khaki text-white"
+            : "bg-gray-200 text-gray-800"
+            }`}
         >
           Past Tours
         </button>
@@ -220,7 +218,7 @@ const Bookings = () => {
                     {formatDate(booking.date)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {booking.destination}
+                    {booking.destinationName}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {booking.guideName || "N/A"}
@@ -266,13 +264,22 @@ const Bookings = () => {
       {selectedBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="max-w-md w-full">
-            <PaymentForm
+            <PaymentWrapper
               onPaymentSuccess={() => handlePaymentComplete(selectedBooking.id)}
               onCancel={closePaymentModal}
+              booking={{
+                ...selectedBooking,
+                // Convert price to USD for Stripe
+                price: convertBIFtoUSD(selectedBooking.price),
+                // Keep original price for display
+                originalPrice: selectedBooking.price,
+                originalCurrency: 'BIF'
+              }}
             />
           </div>
         </div>
       )}
+
     </div>
   );
 };
