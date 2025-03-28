@@ -1,8 +1,44 @@
-import React from "react";
-import { FaStar } from "react-icons/fa"; // Import the star icon
-import { Link } from "react-router-dom"; // Import Link for navigation
+import React, { useState, useEffect } from "react";
+import { FaStar } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 function DestinationCard({ theme, destination }) {
+    const [averageRating, setAverageRating] = useState(null);
+    const [loadingRating, setLoadingRating] = useState(true);
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            if (!destination?.id) {
+                setLoadingRating(false);
+                return;
+            }
+
+            try {
+                const reviewsQuery = query(
+                    collection(db, "reviews"),
+                    where("destinationId", "==", destination.id)
+                );
+                const reviewsSnapshot = await getDocs(reviewsQuery);
+                const reviews = reviewsSnapshot.docs.map((doc) => doc.data());
+
+                // Calculate average rating
+                const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+                const avgRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : null;
+                
+                setAverageRating(avgRating);
+            } catch (error) {
+                console.error("Error fetching reviews:", error);
+                setAverageRating(null);
+            } finally {
+                setLoadingRating(false);
+            }
+        };
+
+        fetchReviews();
+    }, [destination?.id]);
+
     if (!destination) {
         return (
             <div
@@ -16,7 +52,7 @@ function DestinationCard({ theme, destination }) {
 
     return (
         <div
-            className={`w-72 h-[500px] flex flex-col rounded-xl shadow-lg transform transition-transform duration-300 overflow-hidden
+            className={`w-72 h-[500px] flex flex-col rounded-xl font-poppins shadow-lg transform transition-transform duration-300 overflow-hidden
                 ${theme === "light" ? "bg-khaki text-gray-100" : "bg-white text-gray-800"}`}
         >
             {/* Image Section */}
@@ -33,25 +69,22 @@ function DestinationCard({ theme, destination }) {
                     {destination.title || "Destination Name"}
                 </h3>
 
-                {/* Short Description */}
-                {/* <h4 className="text-sm text-gray-600 mt-2 overflow-hidden">
-                    {destination.description
-                        ? destination.description.length > 50
-                            ? `${destination.description.substring(0, 50)}...` // Limit to 50 characters
-                            : destination.description
-                        : ""}
-                </h4> */}
-
                 {/* Category */}
-                <p className="text-gray-500 text-sm mt-2">
-                    Category: {destination.category || "Uncategorized"}
+                <p className="text-gray-500 text-bold text-sm mt-2">
+                    {destination.category || "Uncategorized"}
                 </p>
 
                 {/* Rating */}
                 <div className="flex items-center mt-2">
                     <FaStar className="text-yellow-500" />
                     <span className="ml-1 text-sm">
-                        {destination.averageRating || "No ratings yet"}
+                        {loadingRating ? (
+                            "Loading..."
+                        ) : averageRating ? (
+                            `${averageRating} (${averageRating >= 4 ? "Excellent" : averageRating >= 3 ? "Good" : "Average"})`
+                        ) : (
+                            "No ratings yet"
+                        )}
                     </span>
                 </div>
 

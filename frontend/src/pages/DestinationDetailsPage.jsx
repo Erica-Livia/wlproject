@@ -269,6 +269,7 @@ function DestinationDetailsPage({ theme, toggleTheme }) {
 
                     {/* Extra Details */}
                     <div className="mt-6 bg-gray-100 p-4 rounded-lg">
+                        <p><strong>Price:</strong> {destination.price || "0"} BIF/Person</p>
                         <p><strong>Best Time to Visit:</strong> {destination.bestTime || "All year round"}</p>
                         <p><strong>Activities:</strong> {destination.activities || "Hiking, sightseeing, cultural tours"}</p>
                     </div>

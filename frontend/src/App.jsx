@@ -18,7 +18,6 @@ import GuideProfileSetting from "./pages/guideview/GuideProfileSetting";
 import GuideDetailsPage from "./pages/GuideDetailsPage";
 import UsersList from "./pages/adminview/UsersList";
 import DestinationsList from "./pages/adminview/DestinationsList";
-import CreateDestination from "./pages/adminview/DestinationCreation";
 import GuideBookingPage from "./pages/GuideBookingPage";
 import GuideReviewsPage from "./pages/guideview/GuideReviewsList";
 import GuideBookingsPage from "./pages/guideview/Bookings";
@@ -27,6 +26,7 @@ import UserProfileSetting from "./pages/UserProfile";
 import GuideRevenueDashboard from "./pages/guideview/GuideRevenueDashboard";
 import AdminPayoutApproval from "./pages/adminview/AdminPayoutApproval";
 import AdminRevenueTracking from "./pages/adminview/AdminRevenueTracking";
+import AddDestination from "./pages/adminview/AddDestination";
 
 function App() {
   const [theme, setTheme] = useState("dark");
@@ -86,9 +86,9 @@ function App() {
           {/* Admin Routes */}
           <Route path="/admin-users-list" element={<UsersList />} />
           <Route path="/admin-destinations-list" element={<DestinationsList />} />
-          <Route path="/admin-destinations-create" element={<CreateDestination />} />
           <Route path="/admin-payout-request" element={<AdminPayoutApproval />} />
           <Route path="/admin-revenue" element={<AdminRevenueTracking />} />
+          <Route path="/admin-add-destination" element={<AddDestination />} />
 
           {/* Other Routes */}
           <Route path="/guide-bookings/" element={<GuideBookingsPage theme={theme} toggleTheme={toggleTheme} />} />

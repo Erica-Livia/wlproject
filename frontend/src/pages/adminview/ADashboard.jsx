@@ -60,8 +60,8 @@ const AdminDashboard = () => {
           return sum + price;
         }, 0);
 
-        // Calculate commission (20%) and guides' revenue (80%)
-        const commission = totalRevenue * 0.2;
+        // Calculate commission (8%) and guides' revenue (92%)
+        const commission = totalRevenue * 0.08;
         const guidesRevenue = totalRevenue - commission;
 
         setStats({
@@ -149,13 +149,13 @@ const AdminDashboard = () => {
             </div>
 
             {/* Card 3: Reports */}
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 text-center">
+            {/* <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 text-center">
               <div className="flex justify-center">
                 <Flag className="text-2xl text-adminbg mr-2" />
                 <h2 className="text-xl font-bold text-gray-700">Reports</h2>
               </div>
               <p className="text-3xl mt-4">{stats.reports}</p>
-            </div>
+            </div> */}
 
             {/* Card 4: Destinations */}
             <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 text-center">
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
                   <p className="font-semibold">{stats.totalRevenue.toFixed(2)} BIF</p>
                 </div> */}
                 <div className="flex justify-between mt-2">
-                  <p className="text-gray-600">Commission</p>
+                  <p className="text-gray-600">Commission 8%</p>
                   <p className="font-semibold">{stats.commission.toFixed(2)} BIF</p>
                 </div>
                 <div className="flex justify-between mt-2">

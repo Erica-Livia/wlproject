@@ -37,8 +37,8 @@ const GuideRevenueDashboard = () => {
         
         setBookings(bookingsData);
         
-        // Calculate total earned (20% commission deducted)
-        const earned = bookingsData.reduce((sum, booking) => sum + (booking.price * 0.8), 0);
+        // Calculate total earned (8% commission deducted)
+        const earned = bookingsData.reduce((sum, booking) => sum + (booking.price * 0.92), 0);
         setTotalEarned(earned);
 
         // 2. Fetch payout history (from a temporary payouts collection)
@@ -178,7 +178,7 @@ const GuideRevenueDashboard = () => {
             <div className="bg-white p-4 rounded-lg shadow">
               <h3 className="text-gray-500">Total Earned</h3>
               <p className="text-2xl font-bold">{formatBIF(totalEarned)}</p>
-              <p className="text-sm text-gray-500">(80% of tour payments)</p>
+              <p className="text-sm text-gray-500">(92% of tour payments)</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
               <h3 className="text-gray-500">Total Paid Out</h3>

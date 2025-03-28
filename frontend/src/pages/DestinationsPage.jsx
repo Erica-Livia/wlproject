@@ -10,6 +10,7 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import TawkToScript from "../components/TawkToScript";
+import { PiMoneyWavyThin } from "react-icons/pi";
 import Footer from "../components/Footer";
 
 function DestinationPage({ theme, toggleTheme }) {
@@ -215,6 +216,12 @@ function DestinationPage({ theme, toggleTheme }) {
                                     <FaStar className="text-yellow-500" />
                                     <span className="ml-1 text-sm">
                                         {destination.averageRating || "No ratings yet"}
+                                    </span>
+                                </div>
+                                <div className="flex items-center mt-2">
+                                    <PiMoneyWavyThin />
+                                    <span className="ml-1 text-sm">
+                                        {destination.price || "Free"} BIF
                                     </span>
                                 </div>
                                 <Link to={`/destination-details/${destination.id}`} className="mt-auto">

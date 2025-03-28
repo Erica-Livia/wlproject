@@ -1,0 +1,136 @@
+[
+    {
+      "id": "1",
+      "question": "What is the capital city of Burundi?",
+      "options": [
+        "Bujumbura",
+        "Gitega",
+        "Ngozi",
+        "Muyinga"
+      ],
+      "answer": "Gitega",
+      "explanation": "Gitega became the political capital of Burundi in 2019, replacing Bujumbura which remains the economic capital.",
+      "category": "Geography",
+      "imageUrl": "https://example.com/burundi-map.jpg"
+    },
+    {
+      "id": "2",
+      "question": "Which lake borders Burundi to the southwest?",
+      "options": [
+        "Lake Victoria",
+        "Lake Tanganyika",
+        "Lake Kivu",
+        "Lake Albert"
+      ],
+      "answer": "Lake Tanganyika",
+      "explanation": "Lake Tanganyika is the world's second-deepest lake and forms part of Burundi's southwestern border.",
+      "category": "Geography",
+      "imageUrl": "https://example.com/lake-tanganyika.jpg"
+    },
+    {
+      "id": "3",
+      "question": "What is the traditional dance of Burundi called?",
+      "options": [
+        "Intore",
+        "Umushagiriro",
+        "Amasunzu",
+        "Amaraba"
+      ],
+      "answer": "Intore",
+      "explanation": "The Intore dance is a traditional warrior dance performed with drums and is recognized by UNESCO as intangible cultural heritage.",
+      "category": "Culture"
+    },
+    {
+      "id": "4",
+      "question": "Which year did Burundi gain independence?",
+      "options": [
+        "1958",
+        "1962",
+        "1966",
+        "1972"
+      ],
+      "answer": "1962",
+      "explanation": "Burundi gained independence from Belgium on July 1, 1962.",
+      "category": "History"
+    },
+    {
+      "id": "5",
+      "question": "What is the main staple food in Burundi?",
+      "options": [
+        "Rice",
+        "Maize",
+        "Beans",
+        "Bananas"
+      ],
+      "answer": "Beans",
+      "explanation": "Beans are the main staple, often served with plantains, sweet potatoes, or cassava.",
+      "category": "Culture"
+    },
+    {
+      "id": "6",
+      "question": "Which mountain is the highest point in Burundi?",
+      "options": [
+        "Mount Heha",
+        "Mount Teza",
+        "Mount Karisimbi",
+        "Mount Muhabura"
+      ],
+      "answer": "Mount Heha",
+      "explanation": "Mount Heha is the highest point in Burundi at 2,684 meters (8,806 feet) above sea level.",
+      "category": "Geography",
+      "imageUrl": "https://example.com/mount-heha.jpg"
+    },
+    {
+      "id": "7",
+      "question": "What is the official currency of Burundi?",
+      "options": [
+        "Burundi Shilling",
+        "Burundi Franc",
+        "Burundi Dollar",
+        "Burundi Peso"
+      ],
+      "answer": "Burundi Franc",
+      "explanation": "The official currency is the Burundi Franc (BIF), which was introduced in 1964.",
+      "category": "Economy"
+    },
+    {
+      "id": "8",
+      "question": "Which of these national parks is in Burundi?",
+      "options": [
+        "Kibira National Park",
+        "Virunga National Park",
+        "Serengeti National Park",
+        "Akagera National Park"
+      ],
+      "answer": "Kibira National Park",
+      "explanation": "Kibira National Park is located in northwestern Burundi and is known for its rainforest and primates.",
+      "category": "Nature",
+      "imageUrl": "https://example.com/kibira-park.jpg"
+    },
+    {
+      "id": "9",
+      "question": "What is the official language of Burundi?",
+      "options": [
+        "Kirundi",
+        "French",
+        "Swahili",
+        "All of the above"
+      ],
+      "answer": "All of the above",
+      "explanation": "Burundi has three official languages: Kirundi (national language), French, and English (added in 2014).",
+      "category": "Language"
+    },
+    {
+      "id": "10",
+      "question": "Which body of water is the source of the Nile River located in Burundi?",
+      "options": [
+        "Lake Victoria",
+        "Lake Tanganyika",
+        "Lake Rweru",
+        "Lake Kivu"
+      ],
+      "answer": "Lake Rweru",
+      "explanation": "The southernmost source of the Nile is considered to be in Burundi at Lake Rweru.",
+      "category": "Geography"
+    }
+  ]

@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../components/NavBar";
 import { db, auth } from "../firebase";
-import { collection, getDocs, doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { FaFire, FaTrophy, FaCalendarCheck, FaCheck, FaTimes } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import quizQuestions from "../data/quizQuestions.json";
 
 function QuizPage({ theme, toggleTheme }) {
-  const [allQuestions, setAllQuestions] = useState([]);
   const [dailyQuestions, setDailyQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
@@ -24,8 +24,6 @@ function QuizPage({ theme, toggleTheme }) {
   const [isCorrect, setIsCorrect] = useState(false);
   const [dailySeed, setDailySeed] = useState(null);
 
-  
-  
   const navigate = useNavigate();
   const user = auth.currentUser;
 
@@ -77,91 +75,11 @@ function QuizPage({ theme, toggleTheme }) {
     return shuffledQuestions.slice(0, 3);
   };
 
-  // Fetch all quiz questions from Firestore
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "quizQuestions"));
-        const quizData = [];
-        querySnapshot.forEach((doc) => {
-          quizData.push({ id: doc.id, ...doc.data() });
-        });
-        setAllQuestions(quizData);
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-      }
-    };
-
-    fetchQuestions();
-  }, []);
-
-  // Initialize quiz with user data and daily questions
-  useEffect(() => {
-    const initializeQuiz = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userRef);
-        const today = getTodayString();
-        const seed = generateDailySeed(today);
-        setDailySeed(seed);
-
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setStreak(userData.streak || 0);
-          setLastQuizDate(userData.lastQuizDate?.toDate() || null);
-          setQuizHistory(userData.quizHistory || []);
-
-          // Check if the quiz was already taken today
-          const lastQuizDateStr = userData.lastQuizDate?.toDate().toDateString();
-          const todayStr = new Date().toDateString();
-          
-          if (lastQuizDateStr === todayStr) {
-            setIsQuizAvailable(false);
-            
-            // If user already took the quiz today, show their results
-            if (userData.dailyQuizResults && userData.dailyQuizResults[today]) {
-              const todayResults = userData.dailyQuizResults[today];
-              setScore(todayResults.score || 0);
-              setDailyQuestions(todayResults.questions || []);
-              setAnsweredQuestions(todayResults.answeredQuestions || []);
-              setQuizCompleted(true);
-            }
-          }
-        } else {
-          // Create user document if it doesn't exist
-          await setDoc(userRef, {
-            streak: 0,
-            quizHistory: [],
-            dailyQuizResults: {}
-          });
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error initializing quiz:", error);
-        setLoading(false);
-      }
-    };
-
-    initializeQuiz();
-  }, [user]);
-
-  // Setup daily questions when all questions are loaded
-  useEffect(() => {
-    if (allQuestions.length > 0 && dailySeed && isQuizAvailable && !quizCompleted) {
-      const selected = selectDailyQuestions(allQuestions, dailySeed);
-      setDailyQuestions(selected);
-    }
-  }, [allQuestions, dailySeed, isQuizAvailable, quizCompleted]);
-
   // Get current question
   const currentQuestion = useMemo(() => {
-    return dailyQuestions[currentQuestionIndex] || null;
+    return dailyQuestions.length > 0 && currentQuestionIndex < dailyQuestions.length 
+      ? dailyQuestions[currentQuestionIndex] 
+      : null;
   }, [dailyQuestions, currentQuestionIndex]);
 
   // Calculate time remaining until next quiz
@@ -190,6 +108,8 @@ function QuizPage({ theme, toggleTheme }) {
 
   // Check answer and show feedback
   const handleCheckAnswer = () => {
+    if (!currentQuestion) return;
+    
     const correct = selectedAnswer === currentQuestion.answer;
     setIsCorrect(correct);
     setShowFeedback(true);
@@ -292,6 +212,70 @@ function QuizPage({ theme, toggleTheme }) {
   const handleTomorrow = () => {
     navigate("/");
   };
+
+  // Initialize quiz with user data and daily questions
+  useEffect(() => {
+    const initializeQuiz = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userRef);
+        const today = getTodayString();
+        const seed = generateDailySeed(today);
+        setDailySeed(seed);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setStreak(userData.streak || 0);
+          setLastQuizDate(userData.lastQuizDate?.toDate() || null);
+          setQuizHistory(userData.quizHistory || []);
+
+          // Check if the quiz was already taken today
+          const lastQuizDateStr = userData.lastQuizDate?.toDate().toDateString();
+          const todayStr = new Date().toDateString();
+          
+          if (lastQuizDateStr === todayStr) {
+            setIsQuizAvailable(false);
+            
+            // If user already took the quiz today, show their results
+            if (userData.dailyQuizResults && userData.dailyQuizResults[today]) {
+              const todayResults = userData.dailyQuizResults[today];
+              setScore(todayResults.score || 0);
+              setDailyQuestions(todayResults.questions || []);
+              setAnsweredQuestions(todayResults.answeredQuestions || []);
+              setQuizCompleted(true);
+            }
+          } else {
+            // Select new questions for today
+            const selected = selectDailyQuestions(quizQuestions, seed);
+            setDailyQuestions(selected);
+          }
+        } else {
+          // Create user document if it doesn't exist
+          await setDoc(userRef, {
+            streak: 0,
+            quizHistory: [],
+            dailyQuizResults: {}
+          });
+          
+          // Select new questions for today
+          const selected = selectDailyQuestions(quizQuestions, seed);
+          setDailyQuestions(selected);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error initializing quiz:", error);
+        setLoading(false);
+      }
+    };
+
+    initializeQuiz();
+  }, [user]);
 
   // Loading state
   if (loading) {
@@ -396,7 +380,7 @@ function QuizPage({ theme, toggleTheme }) {
                   You scored <span className="font-bold">{score}</span> out of <span className="font-bold">{dailyQuestions.length}</span>
                 </p>
               </motion.div>
-              </div>
+            </div>
             
             <div className="p-6">
               <motion.div
@@ -532,6 +516,17 @@ function QuizPage({ theme, toggleTheme }) {
                 >
                   <h2 className="text-xl font-bold text-gray-800 mb-6">{currentQuestion.question}</h2>
                   
+                  {/* Add image if available */}
+                  {currentQuestion.imageUrl && (
+                    <div className="mb-4">
+                      <img 
+                        src={currentQuestion.imageUrl} 
+                        alt="Question visual" 
+                        className="w-full rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="space-y-3">
                     {currentQuestion.options.map((option) => (
                       <motion.div
@@ -565,7 +560,7 @@ function QuizPage({ theme, toggleTheme }) {
               )}
               
               {/* Feedback after answering */}
-              {showFeedback && (
+              {showFeedback && currentQuestion && (
                 <motion.div
                   className="text-center py-8"
                   initial={{ opacity: 0, scale: 0.8 }}

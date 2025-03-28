@@ -53,8 +53,8 @@ function GDashboard() {
         }, 0);
         setTotalEarnings(totalEarnings);
 
-        // Calculate commission (20%) and guide revenue (90%)
-        const commissionAmount = totalEarnings * 0.2;
+        // Calculate commission (8%) and guide revenue (92%)
+        const commissionAmount = totalEarnings * 0.08;
         const guideRevenueAmount = totalEarnings - commissionAmount;
 
         setCommission(commissionAmount);
@@ -170,7 +170,7 @@ function GDashboard() {
               </div>
               <div className="mt-4">
                 <div className="flex justify-between">
-                  <p className="text-gray-600">Commission (20%)</p>
+                  <p className="text-gray-600">Commission (8%)</p>
                   <p className="font-semibold">{commission.toFixed(2)} BIF</p>
                 </div>
                 <div className="flex justify-between mt-2">

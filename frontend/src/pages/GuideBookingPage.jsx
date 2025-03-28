@@ -258,7 +258,7 @@ function GuideBookingPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto font-poppins">
       <ToastContainer />
 
       {/* Guide Info Header */}
@@ -351,7 +351,7 @@ function GuideBookingPage() {
               <p className="mb-1"><strong>Destination:</strong> {destination.title}</p>
               <p className="mb-1"><strong>Date:</strong> {selectedDate.toLocaleDateString()}</p>
               <p className="mb-1"><strong>Time:</strong> {selectedSlot}</p>
-              <p className="mb-1"><strong>Price:</strong> ${destination.price}</p>
+              <p className="mb-1"><strong>Price:</strong> {destination.price} BIF</p>
             </div>
           )}
 

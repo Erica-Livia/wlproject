@@ -142,9 +142,9 @@ function NavBar({ theme, toggleTheme, role }) {
                                                         <Link to="/profile" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
                                                             Profile
                                                         </Link>
-                                                        <Link to="/settings" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
+                                                        {/* <Link to="/settings" className="block px-4 py-2 hover:bg-opacity-20 hover:bg-gray-200">
                                                             Settings
-                                                        </Link>
+                                                        </Link> */}
                                                         <button
                                                             onClick={() => {
                                                                 setShowLogoutModal(true);
@@ -247,9 +247,9 @@ function NavBar({ theme, toggleTheme, role }) {
                                     <li className="border-b pb-2 hover:opacity-75 transition-opacity">
                                         <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>Profile</Link>
                                     </li>
-                                    <li className="border-b pb-2 hover:opacity-75 transition-opacity">
+                                    {/* <li className="border-b pb-2 hover:opacity-75 transition-opacity">
                                         <Link to="/settings" onClick={() => setMobileMenuOpen(false)}>Settings</Link>
-                                    </li>
+                                    </li> */}
                                     <li className="hover:opacity-75 transition-opacity">
                                         <button
                                             onClick={() => {

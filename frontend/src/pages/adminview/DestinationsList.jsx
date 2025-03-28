@@ -4,7 +4,7 @@ import { auth, db } from "../../firebase";
 import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
 import AdminNav from "../../components/AdminNav";
 import { Search, Star, Download, MapPin, Users, Map, ArrowUp, ArrowDown } from "lucide-react"; // Added sorting icons
-import { saveAs } from "file-saver"; // For exporting CSV
+import { saveAs } from "file-saver";
 
 const DestinationsList = () => {
     const [loading, setLoading] = useState(true);
@@ -22,21 +22,21 @@ const DestinationsList = () => {
         const checkAdmin = async () => {
             const user = auth.currentUser;
             if (!user) {
-              navigate("/login");
-              return;
+                navigate("/login");
+                return;
             }
-          
+
             const userDoc = await getDoc(doc(db, "users", user.uid));
             const userData = userDoc.data();
-          
+
             if (!userData || userData.role !== "admin") {
-              navigate("/");
-              return;
+                navigate("/");
+                return;
             }
-          
+
             await fetchDestinations();
             setLoading(false);
-          };
+        };
 
         checkAdmin();
     }, [navigate, db]);
@@ -65,7 +65,7 @@ const DestinationsList = () => {
                     const guides = guidesSnapshot.docs;
 
                     // Count affiliated guides for this destination
-                    const affiliatedGuides = guides.filter(guide => 
+                    const affiliatedGuides = guides.filter(guide =>
                         guide.data().affiliatedDestinations?.includes(destinationId)
                     ).length;
 
@@ -116,15 +116,15 @@ const DestinationsList = () => {
     };
 
     const filteredDestinations = showAllDestinations
-        ? destinations 
+        ? destinations
         : destinations.filter(destination => {
-            const matchesSearch = 
+            const matchesSearch =
                 destination.title?.toLowerCase().includes(searchTerm.toLowerCase());
-            
-            const matchesRating = 
-                selectedRating === "all" || 
+
+            const matchesRating =
+                selectedRating === "all" ||
                 (destination.rating !== undefined && destination.rating >= parseFloat(selectedRating));
-            
+
             return matchesSearch && matchesRating;
         });
 
@@ -156,7 +156,7 @@ const DestinationsList = () => {
                         <div>
                             <h1 className="text-2xl font-bold text-gray-800">Destinations Management</h1>
                         </div>
-                        <button 
+                        <button
                             className="px-4 py-2 bg-adminbg text-white rounded-lg flex items-center"
                             onClick={handleExportData}
                         >
@@ -225,7 +225,16 @@ const DestinationsList = () => {
                                 sortOrder === "asc" ? <ArrowUp size={16} className="ml-2" /> : <ArrowDown size={16} className="ml-2" />
                             )}
                         </button>
+                        <button
+                            className="px-4 py-2 bg-adminbg text-white rounded-lg flex items-center"
+                            onClick={() => navigate("/admin-add-destination")}
+                        >
+                            Add a new destination
+                        </button>
+
+
                     </div>
+
 
                     {/* Destinations Table */}
                     <div className="bg-white rounded-lg shadow-md overflow-hidden">
