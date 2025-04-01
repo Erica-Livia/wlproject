@@ -13,7 +13,7 @@ function SignUp() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'user' // Default role
+    role: 'user'
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -247,7 +247,7 @@ function SignUp() {
                 To become a guide, you need to verify your identity. Please fill out the form below:
               </p>
               <a
-                href="YOUR_GOOGLE_FORM_URL" // Replace with your Google Form URL
+                href="https://forms.gle/4QRbciMKdPwKhdCv7"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"

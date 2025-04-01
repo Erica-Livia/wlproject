@@ -348,7 +348,6 @@ function GuideProfileSetting() {
                                                 value={day}
                                                 onChange={(e) => setDay(e.target.value)}
                                                 className="w-full border rounded-lg p-2"
-                                                required
                                             >
                                                 <option value="">Select Day</option>
                                                 {weekdays.map((weekday) => (
@@ -367,7 +366,7 @@ function GuideProfileSetting() {
                                                 value={startTime}
                                                 onChange={(e) => setStartTime(e.target.value)}
                                                 className="w-full border rounded-lg p-2"
-                                                required
+                                                
                                             />
                                         </div>
 
@@ -379,7 +378,7 @@ function GuideProfileSetting() {
                                                 value={endTime}
                                                 onChange={(e) => setEndTime(e.target.value)}
                                                 className="w-full border rounded-lg p-2"
-                                                required
+                                               
                                             />
                                         </div>
 

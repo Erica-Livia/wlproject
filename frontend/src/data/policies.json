@@ -1,0 +1,44 @@
+{
+  "termsAndConditions": {
+    "lastUpdated": "2025-06-15",
+    "sections": [
+      {
+        "title": "Acceptance of Terms",
+        "content": "By accessing Wanderlust, you agree to these Terms. If you disagree, please refrain from using our platform."
+      },
+      {
+        "title": "Guide Responsibilities",
+        "content": "Guides must provide accurate information and maintain professional conduct. Wanderlust reserves the right to remove guides who violate our community standards."
+      },
+      {
+        "title": "User Content",
+        "content": "Reviews and photos must be authentic. Fake content will be removed and may result in account suspension."
+      },
+      {
+        "title": "Payments & Commissions",
+        "content": "Wanderlust charges an 8% commission on completed bookings. This fee supports platform maintenance and guide verification services."
+      }
+    ]
+  },
+  "privacyPolicy": {
+    "lastUpdated": "2025-06-15",
+    "sections": [
+      {
+        "title": "Data Collection",
+        "content": "We collect only necessary information: name, email, and booking details. Payment processing is handled securely by Stripe."
+      },
+      {
+        "title": "Data Usage",
+        "content": "Your data helps personalize your experience and improve our services. We never sell your information to third parties."
+      },
+      {
+        "title": "Cookies",
+        "content": "We use essential cookies for functionality. You can disable non-essential cookies in your browser settings."
+      },
+      {
+        "title": "User Rights",
+        "content": "You may request account deletion at any time by contacting privacy@wanderlust.bi. Data will be anonymized within 30 days."
+      }
+    ]
+  }
+}

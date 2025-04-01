@@ -97,13 +97,13 @@ function AdminNav() {
             {/* Profile Dropdown */}
             {showProfileDropdown && isExpanded && (
               <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white text-black py-2 z-50">
-                <Link
+                {/* <Link
                   to="/profile"
                   className="block px-4 py-2 hover:bg-gray-100"
                   onClick={() => setShowProfileDropdown(false)}
                 >
                   Profile
-                </Link>
+                </Link> */}
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"

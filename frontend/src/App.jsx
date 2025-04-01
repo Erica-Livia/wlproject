@@ -27,6 +27,7 @@ import GuideRevenueDashboard from "./pages/guideview/GuideRevenueDashboard";
 import AdminPayoutApproval from "./pages/adminview/AdminPayoutApproval";
 import AdminRevenueTracking from "./pages/adminview/AdminRevenueTracking";
 import AddDestination from "./pages/adminview/AddDestination";
+import LegalPolicies from "./pages/LegalPolicies";
 
 function App() {
   const [theme, setTheme] = useState("dark");
@@ -76,6 +77,8 @@ function App() {
           <Route path="/profile" element={<UserProfileSetting theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/destination-details/:id" element={<DestinationDetailsPage theme={theme} toggleTheme={toggleTheme} />} />
           <Route path="/guide-details/:guideId" element={<GuideDetailsPage theme={theme} toggleTheme={toggleTheme} />} />
+          <Route path="/terms-and-conditions" element={<LegalPolicies theme={theme} toggleTheme={toggleTheme} />} />
+          
 
           {/* Guides Routes */}
           <Route path="/guide-dashboard" element={<GDashboard />} />
