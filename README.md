@@ -58,7 +58,7 @@ cd wlproject
    The app should be accessible at `http://localhost:5173/`.
 
 ## 3. Video Demo
-https://youtu.be/Zk1BfmTl8QE
+[https://youtu.be/Zk1BfmTl8QE](https://youtu.be/I9MxMCwLSik)
 
 ## 4. Link to deployed prototype
 
